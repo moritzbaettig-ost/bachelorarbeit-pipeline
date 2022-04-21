@@ -4,21 +4,21 @@ from socketserver import ThreadingMixIn
 import urllib3
 import io
 
-hostname = ''
-stream = io.StringIO()
+_hostname = None
+_successor = None
 
 
-def start_proxy(host):
-    global hostname
-    hostname = host
+def start_proxy(successor, hostname):
+    global _hostname
+    _hostname = hostname
     proxy_address = ('0.0.0.0', 80)
     urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
     httpd = ThreadedHTTPServer(proxy_address, ProxyHTTPRequestHandler)
     httpd.serve_forever()
 
-    global stream
-    return stream
+    global _successor
+    _successor = successor
 
 
 def merge_two_dicts(x, y):
@@ -27,7 +27,7 @@ def merge_two_dicts(x, y):
 
 def set_header():
     headers = {
-        'Host': hostname
+        'Host': _hostname
     }
     return headers
 
@@ -44,7 +44,7 @@ def process_request(req, req_type):
         post_data = req.rfile.read(l)
         final_string += "\n"
         final_string += post_data.decode('utf-8')
-    stream.write(final_string)
+    _successor.filter_request(final_string)
 
 
 class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
@@ -58,7 +58,7 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
         process_request(self, 'GET')
         sent = False
         try:
-            url = 'http://{}{}'.format(hostname, self.path)
+            url = 'http://{}{}'.format(_hostname, self.path)
             # print(url)
             req_header = self.parse_headers()
 
@@ -82,7 +82,7 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
         process_request(self, 'POST')
         sent = False
         try:
-            url = 'http://{}{}'.format(hostname, self.path)
+            url = 'http://{}{}'.format(_hostname, self.path)
             content_len = int(self.headers.get('content-length'))
             post_body = self.rfile.read(content_len)
             req_header = self.parse_headers()

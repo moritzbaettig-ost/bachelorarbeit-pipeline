@@ -1,6 +1,6 @@
 import sys
-from modules import acquisition
-import io
+import acquisition
+from filter import RequestFilter
 
 host = ''
 mode = ''
@@ -19,13 +19,9 @@ def init_pipeline():
 
     print(f"Running pipeline with host {host} and mode {mode}")
 
-    stream = acquisition.start_proxy(host)
-
-    while True:
-        s = stream.getvalue()
-        if s != '':
-            print(s)
-            stream.flush()
+    # TODO: Create 3 other pipeline stages, pass every successor
+    stage_filter = RequestFilter(None, None)
+    acquisition.start_proxy(stage_filter, host)
 
 
 if __name__ == '__main__':
