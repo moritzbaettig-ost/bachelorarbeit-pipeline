@@ -2,70 +2,51 @@ import requests
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 import urllib3
-import io
-
-_hostname = None
-_successor = None
-
-
-def start_proxy(successor, hostname):
-    global _hostname
-    _hostname = hostname
-    proxy_address = ('0.0.0.0', 80)
-    urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-    httpd = ThreadedHTTPServer(proxy_address, ProxyHTTPRequestHandler)
-    httpd.serve_forever()
-
-    global _successor
-    _successor = successor
+from stages import Stage
+from stages.filter import RequestFilter
+from dtos import AcquisitionFilterDTO
 
 
-def merge_two_dicts(x, y):
-    return x | y
+class Acquisition(Stage):
+    def __init__(self, successor: RequestFilter, hostname: str):
+        self.hostname = hostname
+        super().__init__(successor)
 
 
-def set_header():
-    headers = {
-        'Host': _hostname
-    }
-    return headers
+    def run(self, dto: None):
+        urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-
-def process_request(req, req_type):
-    final_string = ""
-    final_string += "Source Address: " + req.client_address[0]
-    final_string += "\n"
-    final_string += req_type + " " + req.path + " " + req.protocol_version
-    final_string += "\n"
-    final_string += req.headers
-    if req_type == 'POST':
-        l = int(req.headers['Content-Length'])
-        post_data = req.rfile.read(l)
-        final_string += "\n"
-        final_string += post_data.decode('utf-8')
-    _successor.filter_request(final_string)
+        handler = ProxyHTTPRequestHandler(self.hostname, self.successor)
+        # server = ThreadedHTTPServer(('0.0.0.0', 80), ProxyHTTPRequestHandler)
+        server = HTTPServer(('0.0.0.0', 80), handler)
+        server.serve_forever()
 
 
 class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
-    protocol_version = 'HTTP/1.1'
+    def __init__(self, hostname: str, successor: RequestFilter):
+        self.protocol_version = 'HTTP/1.1'
+        self.hostname = hostname
+        self.successor = successor
+
+    def __call__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def do_HEAD(self):
         self.do_GET(body=False)
         return
 
     def do_GET(self, body=True):
-        process_request(self, 'GET')
+        self.process_request('GET')
         sent = False
         try:
-            url = 'http://{}{}'.format(_hostname, self.path)
+            url = 'http://{}{}'.format(self.hostname, self.path)
             # print(url)
             req_header = self.parse_headers()
 
             # print(req_header)
             # print(self.headers)
             # print(url)
-            resp = requests.get(url, headers=merge_two_dicts(req_header, set_header()), verify=False)
+            resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
             sent = True
 
             self.send_response(resp.status_code)
@@ -79,15 +60,15 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
                 self.send_error(404, 'error trying to proxy')
 
     def do_POST(self, body=True):
-        process_request(self, 'POST')
+        self.process_request('POST')
         sent = False
         try:
-            url = 'http://{}{}'.format(_hostname, self.path)
+            url = 'http://{}{}'.format(self.hostname, self.path)
             content_len = int(self.headers.get('content-length'))
             post_body = self.rfile.read(content_len)
             req_header = self.parse_headers()
 
-            resp = requests.post(url, data=post_body, headers=merge_two_dicts(req_header, set_header()), verify=False)
+            resp = requests.post(url, data=post_body, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
             sent = True
 
             self.send_response(resp.status_code)
@@ -123,6 +104,31 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
 
     def log_request(self, code='-', size='-'):
         return
+
+    def merge_two_dicts(self, x, y):
+        return x | y
+
+    def set_header(self):
+        headers = {
+            'Host': self.hostname
+        }
+        return headers
+
+    def process_request(self, req_type):
+        final_string = ""
+        final_string += "Source Address: " + self.client_address[0]
+        final_string += "\n"
+        final_string += req_type + " " + self.path + " " + self.protocol_version
+        final_string += "\n"
+        final_string += self.headers
+        if req_type == 'POST':
+            l = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(l)
+            final_string += "\n"
+            final_string += post_data.decode('utf-8')
+
+        dto = AcquisitionFilterDTO(request=final_string)
+        self.successor.run(dto)
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):

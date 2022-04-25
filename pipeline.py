@@ -1,6 +1,6 @@
 import sys
-import acquisition
-from filter import RequestFilter
+from stages.acquisition import Acquisition
+from stages.filter import RequestFilter
 
 host = ''
 mode = ''
@@ -21,7 +21,10 @@ def init_pipeline():
 
     # TODO: Create 3 other pipeline stages, pass every successor
     stage_filter = RequestFilter(None, None)
-    acquisition.start_proxy(stage_filter, host)
+    acquisition = Acquisition(stage_filter, host)
+    
+    # Start Pipeline
+    acquisition.run(None)
 
 
 if __name__ == '__main__':
