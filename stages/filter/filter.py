@@ -1,5 +1,6 @@
 import importlib
 import sys
+import os
 from dtos.DTOs import AcquisitionFilterDTO
 from stages import Stage
 
@@ -11,21 +12,22 @@ class FilterPluginInterface:
 
 class RequestFilter(Stage):
     # TODO: Insert type of successor
-    # TODO: Remove filter_plugin param and import all filter plugins in directory automatically. Use multiple filters.
-    def __init__(self, successor: None, filter_plugin: str):
-        sys.path.append('./stages/filter')
-        if filter_plugin is not None:
-            self.plugin = importlib.import_module('filterPlugin'+filter_plugin, ".").Plugin()
-        else:
-            self.plugin = importlib.import_module('filterPluginDefault', ".").Plugin()
-
+    def __init__(self, successor: None):
+        if len(os.listdir('./stages/filter/plugins')) == 0:
+            sys.exit("No filter plugin detcted. Please place default filter plugin in the filter plugis directory.")
+        sys.path.append('./stages/filter/plugins')
+        self.plugins = [
+            importlib.import_module(f.split('.')[0], '.').Plugin()
+            for f in next(os.walk('stages/filter/plugins'))[2]
+        ]
         super().__init__(successor)
 
     def run(self, dto: AcquisitionFilterDTO):
-        t = self.plugin.filter_request(dto.request)
-        if not t[0]:
-            # TODO: Pass req string to successor
-            print(self.plugin.filter_request(dto.request))
-        else:
-            print("Filter Alert: "+t[1])
-            # TODO: Throw Filter Alert
+        for plugin in self.plugins:
+            filter_response = plugin.filter_request(dto.message)
+            if filter_response[0]:
+                # TODO: Throw Filter Alert
+                print("Filter Alert: "+filter_response[1])
+                return
+        # TODO: Pass req string to successor
+        print(dto.message)

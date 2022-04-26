@@ -20,7 +20,7 @@ def init_pipeline():
     print(f"Running pipeline with host {host} and mode {mode}")
 
     # TODO: Create 3 other pipeline stages, pass every successor
-    stage_filter = RequestFilter(None, None)
+    stage_filter = RequestFilter(None)
     acquisition = Acquisition(stage_filter, host)
     
     # Start Pipeline

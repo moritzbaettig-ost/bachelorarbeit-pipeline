@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from message import IDSHTTPMessage
 
 
 @dataclass
@@ -8,4 +9,4 @@ class DTO:
 
 @dataclass
 class AcquisitionFilterDTO(DTO):
-    request: str
+    message: IDSHTTPMessage

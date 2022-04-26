@@ -2,6 +2,7 @@ import requests
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 import urllib3
+from message import IDSHTTPMessage
 from stages import Stage
 from stages.filter import RequestFilter
 from dtos import AcquisitionFilterDTO
@@ -17,8 +18,8 @@ class Acquisition(Stage):
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         handler = ProxyHTTPRequestHandler(self.hostname, self.successor)
-        # server = ThreadedHTTPServer(('0.0.0.0', 80), ProxyHTTPRequestHandler)
-        server = HTTPServer(('0.0.0.0', 80), handler)
+        server = ThreadedHTTPServer(('0.0.0.0', 80), handler)
+        # server = HTTPServer(('0.0.0.0', 80), handler)
         server.serve_forever()
 
 
@@ -115,19 +116,20 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
         return headers
 
     def process_request(self, req_type):
-        final_string = ""
-        final_string += "Source Address: " + self.client_address[0]
-        final_string += "\n"
-        final_string += req_type + " " + self.path + " " + self.protocol_version
-        final_string += "\n"
-        final_string += self.headers
+        m = IDSHTTPMessage(
+            source_address=self.client_address[0],
+            method=req_type,
+            path=self.path,
+            protocol_version=self.protocol_version,
+            header=self.headers,
+            body=None
+        )
         if req_type == 'POST':
             l = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(l)
-            final_string += "\n"
-            final_string += post_data.decode('utf-8')
+            post_data = self.rfile.read(l).decode('utf-8')
+            m.body=post_data
 
-        dto = AcquisitionFilterDTO(request=final_string)
+        dto = AcquisitionFilterDTO(message=m)
         self.successor.run(dto)
 
 
