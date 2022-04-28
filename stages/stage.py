@@ -1,11 +1,10 @@
 from abc import ABC, abstractmethod
 from dtos import DTO
-import stages
-# from stages import Stage
+
 
 
 class Stage(ABC):
-    def __init__(self, successor):
+    def __init__(self, successor: 'Stage'):
         self.successor = successor
 
     @abstractmethod

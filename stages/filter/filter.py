@@ -1,6 +1,10 @@
 import importlib
 import sys
 import os
+from typing import List
+from alerting.IObservable import IObservable
+from alerting.IObserver import IObserver
+from alerting.alert import Alert
 from dtos.DTOs import AcquisitionFilterDTO
 from stages import Stage
 
@@ -10,9 +14,9 @@ class FilterPluginInterface:
         pass
 
 
-class RequestFilter(Stage):
+class RequestFilter(Stage, IObservable):
     # TODO: Insert type of successor
-    def __init__(self, successor: None):
+    def __init__(self, successor: Stage):
         if len(os.listdir('./stages/filter/plugins')) == 0:
             sys.exit("No filter plugin detcted. Please place default filter plugin in the filter plugis directory.")
         sys.path.append('./stages/filter/plugins')
@@ -26,8 +30,20 @@ class RequestFilter(Stage):
         for plugin in self.plugins:
             filter_response = plugin.filter_request(dto.message)
             if filter_response[0]:
-                # TODO: Throw Filter Alert
-                print("Filter Alert: "+filter_response[1])
+                alert = Alert(msg=filter_response[1])
+                self.notify(alert)
                 return
-        # TODO: Pass req string to successor
+        # TODO: Pass message object to successor
         print(dto.message)
+
+    _observers: List[IObserver] = []
+
+    def attach(self, observer: IObserver) -> None:
+        self._observers.append(observer)
+
+    def detach(self, observer: IObserver) -> None:
+        self._observers.remove(observer)
+
+    def notify(self, alert: Alert) -> None:
+        for observer in self._observers:
+            observer.update(self, alert)
