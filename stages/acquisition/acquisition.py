@@ -116,19 +116,23 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
         return headers
 
     def process_request(self, req_type):
+        path_query_split = self.path.split('?', 1)
         m = IDSHTTPMessage(
             source_address=self.client_address[0],
             method=req_type,
-            path=self.path,
+            path=path_query_split[0],
+            query='',
             protocol_version=self.protocol_version,
             header=self.headers,
-            body=None
+            body=''
         )
+        if len(path_query_split) == 2:
+            m.query = path_query_split[1]
         if req_type == 'POST':
             l = int(self.headers['Content-Length'])
             post_data = self.rfile.read(l).decode('utf-8')
             m.body=post_data
-
+        print(m)
         dto = AcquisitionFilterDTO(message=m)
         self.successor.run(dto)
 
