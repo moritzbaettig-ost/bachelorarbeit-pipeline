@@ -1,6 +1,7 @@
 from stages import Stage
 from dtos import DTO, FilterTypingDTO
 import sys
+from typing import Union
 
 
 class Typing(Stage):
@@ -14,12 +15,23 @@ class Typing(Stage):
 
 
 class RootNode:
-    pass
+    def __init__(self, method: str) -> None:
+        self.method = method
+        self.children = []
+
+    def add_child(self, child: 'DirNode') -> None:
+        self.children.append(child)
 
 
 class DirNode:
-    pass
+    def __init__(self, dir_name: str) -> None:
+        self.dir_name = dir_name
+        self.children = []
+
+    def add_child(self, child: Union['DirNode', 'ResourceNode']) -> None:
+        self.children.append(child)
 
 
 class ResourceNode:
-    pass
+    def __init__(self, resource_name: str) -> None:
+        self.resource_name = resource_name
