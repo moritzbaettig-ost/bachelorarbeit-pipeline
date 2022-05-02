@@ -5,7 +5,7 @@ import urllib3
 from message import IDSHTTPMessage
 from stages import Stage
 from stages.filter import RequestFilter
-from dtos import AcquisitionFilterDTO
+from dtos import DTO, AcquisitionFilterDTO
 
 
 class Acquisition(Stage):
@@ -14,7 +14,7 @@ class Acquisition(Stage):
         super().__init__(successor)
 
 
-    def run(self, dto: None):
+    def run(self, dto: DTO) -> None:
         urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
         handler = ProxyHTTPRequestHandler(self.hostname, self.successor)
@@ -132,7 +132,7 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
             l = int(self.headers['Content-Length'])
             post_data = self.rfile.read(l).decode('utf-8')
             m.body=post_data
-        print(m)
+
         dto = AcquisitionFilterDTO(message=m)
         self.successor.run(dto)
 

@@ -10,3 +10,8 @@ class DTO:
 @dataclass
 class AcquisitionFilterDTO(DTO):
     message: IDSHTTPMessage
+
+
+@dataclass
+class FilterTypingDTO(DTO):
+    message: IDSHTTPMessage

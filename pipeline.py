@@ -2,6 +2,7 @@ import sys
 from alerting.alert import Alerting
 from stages.acquisition import Acquisition
 from stages.filter import RequestFilter
+from stages.typing import Typing
 
 host = ''
 mode = ''
@@ -22,13 +23,17 @@ def init_pipeline():
 
     alerting_observer = Alerting()
 
-    # TODO: Create 3 other pipeline stages, pass every successor
-    stage_filter = RequestFilter(None)
+    # TODO: Create 2 other pipeline stages, pass every successor
+    # STAGE: Typing
+    stage_typing = Typing(None)
+    # STAGE: Filter
+    stage_filter = RequestFilter(stage_typing)
     stage_filter.attach(alerting_observer)
-    acquisition = Acquisition(stage_filter, host)
+    # STAGE: Acquisition
+    stage_acquisition = Acquisition(stage_filter, host)
     
     # Start Pipeline
-    acquisition.run(None)
+    stage_acquisition.run(None)
 
 
 if __name__ == '__main__':

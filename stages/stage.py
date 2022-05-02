@@ -8,5 +8,5 @@ class Stage(ABC):
         self.successor = successor
 
     @abstractmethod
-    def run(self, dto: DTO):
+    def run(self, dto: DTO) -> None:
         pass

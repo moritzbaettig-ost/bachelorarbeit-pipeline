@@ -1,1 +1,1 @@
-from .DTOs import DTO, AcquisitionFilterDTO
+from .DTOs import DTO, AcquisitionFilterDTO, FilterTypingDTO
