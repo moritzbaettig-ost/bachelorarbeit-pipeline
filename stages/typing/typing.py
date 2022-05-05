@@ -81,10 +81,7 @@ class RootNode(INode):
             if child is None: # Resource doesn't exist yet
                 child = ResourceNode(res_name)
                 if not core:
-                    if len(self.timestamps_short_term) == 0:
-                        child.init_time = datetime.now()
-                    else:
-                        child.init_time = self.timestamps_short_term[-1]
+                    child.init_time = self.timestamps_short_term[-1]
                 else:
                     child.core_node = True
                     child.init_time = self.init_time
@@ -97,10 +94,7 @@ class RootNode(INode):
             if child is None: # Directory doesn't exist yet
                 child = DirNode(dir_name)
                 if not core:
-                    if len(self.timestamps_short_term) == 0:
-                        child.init_time = datetime.now()
-                    else:
-                        child.init_time = self.timestamps_short_term[-1]
+                    child.init_time = self.timestamps_short_term[-1]
                 else:
                     child.core_node = True
                     child.init_time = self.init_time
@@ -125,7 +119,7 @@ class RootNode(INode):
             f"Timestamps Short Term: {self.timestamps_short_term}\n" \
             f"GET Nodes: {self.GET_nodes}\n" \
             f"POST Nodes: {self.POST_nodes}\n" \
-            "--------"
+            "---- End ROOT ----"
 
 
 class DirNode(INode):
@@ -149,10 +143,7 @@ class DirNode(INode):
             if child is None: # Resource doesn't exist yet
                 child = ResourceNode(res_name)
                 if not core:
-                    if len(self.timestamps_short_term) == 0:
-                        child.init_time = datetime.now()
-                    else:
-                        child.init_time = self.timestamps_short_term[-1]
+                    child.init_time = self.timestamps_short_term[-1]
                 else:
                     child.core_node = True
                     child.init_time = self.init_time
@@ -165,10 +156,7 @@ class DirNode(INode):
             if child is None: # Directory doesn't exist yet
                 child = DirNode(dir_name)
                 if not core:
-                    if len(self.timestamps_short_term) == 0:
-                        child.init_time = datetime.now()
-                    else:
-                        child.init_time = self.timestamps_short_term[-1]
+                    child.init_time = self.timestamps_short_term[-1]
                 else:
                     child.core_node = True
                     child.init_time = self.init_time
@@ -191,7 +179,7 @@ class DirNode(INode):
             f"# of Timestamps Short Term: {len(self.timestamps_short_term)}\n" \
             f"Timestamps Short Term: {self.timestamps_short_term}\n" \
             f"Children: {self.children}\n" \
-            "--------"
+            f"---- End Dir: {self.name} ----"
 
     def __repr__(self):
         return textwrap.indent(f"\n{self.__str__()}\n", 4 * ' ')
@@ -221,7 +209,7 @@ class ResourceNode(INode):
             f"Initial Time: {self.init_time}\n" \
             f"# of Timestamps Short Term: {len(self.timestamps_short_term)}\n" \
             f"Timestamps Short Term: {self.timestamps_short_term}\n" \
-            "--------"
+            f"---- End RES: {self.name} ----"
 
     def __repr__(self):
         return textwrap.indent(f"\n{self.__str__()}\n", 4 * ' ')
