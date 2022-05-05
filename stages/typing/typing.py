@@ -5,12 +5,28 @@ import sys
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
 from datetime import datetime
+import json
+import os
+import textwrap
+import copy
 
 
 class Typing(Stage):
     def __init__(self, successor: 'Stage'):
-        self.root = RootNode()
+        self.root = RootNode(datetime.now())
+        self.init_core()
         super().__init__(successor)
+
+    def init_core(self):
+        here = os.path.dirname(os.path.abspath(__file__))
+        filename = os.path.join(here, 'config.json')
+        data = json.load(open(filename))
+        for path in data['paths']:
+            path_list = list(Path(path['path']).parts)
+            path_list.pop(0)
+            for method in path['methods']:
+                temp_path_list = copy.deepcopy(path_list)
+                self.root.add_child(temp_path_list, method, True)
 
     def run(self, dto: DTO) -> None:
         if not isinstance(dto, FilterTypingDTO):
@@ -21,8 +37,7 @@ class Typing(Stage):
         
         path_list = list(Path(dto.message.path).parts)
         path_list.pop(0)
-        print(path_list)
-        self.root.add_child(path_list, dto.message.method)
+        self.root.add_child(path_list, dto.message.method, False)
 
 
 class INode(metaclass=ABCMeta):
@@ -39,7 +54,7 @@ class INode(metaclass=ABCMeta):
      
 
 class RootNode(INode):
-    def __init__(self) -> None:
+    def __init__(self, init_time: datetime) -> None:
         self.GET_nodes = []
         self.POST_nodes = []
         self.HEAD_nodes = []
@@ -49,12 +64,14 @@ class RootNode(INode):
         self.PATCH_nodes = []
 
         self.core_node = True
+
+        self.init_time = init_time
         
         self.timestamps_short_term = []
         self.timestamps_medium_term = []
         self.timestamps_long_term = []
 
-    def add_child(self, path_list: List, method: str) -> None:
+    def add_child(self, path_list: List, method: str, core: bool) -> None:
         if len(path_list) < 2: # Resource
             if len(path_list) == 0: # Root
                 res_name = "/"
@@ -63,17 +80,35 @@ class RootNode(INode):
             child = next((x for x in getattr(self, method+"_nodes") if (isinstance(x, ResourceNode) and x.name == res_name)), None)
             if child is None: # Resource doesn't exist yet
                 child = ResourceNode(res_name)
+                if not core:
+                    if len(self.timestamps_short_term) == 0:
+                        child.init_time = datetime.now()
+                    else:
+                        child.init_time = self.timestamps_short_term[-1]
+                else:
+                    child.core_node = True
+                    child.init_time = self.init_time
                 getattr(self, method+"_nodes").append(child)
-            child.add_timestamp(self.timestamps_short_term[-1])
+            if not core:
+                child.add_timestamp(self.timestamps_short_term[-1])
         else: # Directory
             dir_name = path_list[0]
             child = next((x for x in getattr(self, method+"_nodes") if (isinstance(x, DirNode) and x.name == dir_name)), None)
             if child is None: # Directory doesn't exist yet
                 child = DirNode(dir_name)
+                if not core:
+                    if len(self.timestamps_short_term) == 0:
+                        child.init_time = datetime.now()
+                    else:
+                        child.init_time = self.timestamps_short_term[-1]
+                else:
+                    child.core_node = True
+                    child.init_time = self.init_time
                 getattr(self, method+"_nodes").append(child)
-            child.add_timestamp(self.timestamps_short_term[-1])
+            if not core:
+                child.add_timestamp(self.timestamps_short_term[-1])
             path_list.pop(0)
-            child.add_child(path_list)
+            child.add_child(path_list, core)
 
 
     def add_timestamp(self, ts: datetime) -> None:
@@ -81,6 +116,16 @@ class RootNode(INode):
     
     def aggregate(self) -> None:
         pass
+
+    def __str__(self):
+        return f"---- ROOT Node ----\n" \
+            f"Core: {self.core_node}\n" \
+            f"Initial Time: {self.init_time}\n" \
+            f"# of Timestamps Short Term: {len(self.timestamps_short_term)}\n" \
+            f"Timestamps Short Term: {self.timestamps_short_term}\n" \
+            f"GET Nodes: {self.GET_nodes}\n" \
+            f"POST Nodes: {self.POST_nodes}\n" \
+            "--------"
 
 
 class DirNode(INode):
@@ -89,45 +134,94 @@ class DirNode(INode):
         
         self.children = []
 
+        self.init_time = None
+
         self.timestamps_short_term = []
         self.timestamps_medium_term = []
         self.timestamps_long_term = []
 
-    def add_child(self, path_list: List) -> None:
+        self.core_node = False
+
+    def add_child(self, path_list: List, core: bool) -> None:
         if len(path_list) == 1: # Resource
             res_name = path_list[0]
             child = next((x for x in self.children if (isinstance(x, ResourceNode) and x.name == res_name)), None)
             if child is None: # Resource doesn't exist yet
                 child = ResourceNode(res_name)
+                if not core:
+                    if len(self.timestamps_short_term) == 0:
+                        child.init_time = datetime.now()
+                    else:
+                        child.init_time = self.timestamps_short_term[-1]
+                else:
+                    child.core_node = True
+                    child.init_time = self.init_time
                 self.children.append(child)
-            child.add_timestamp(self.timestamps_short_term[-1])
+            if not core:
+                child.add_timestamp(self.timestamps_short_term[-1])
         else: # Directory
             dir_name = path_list[0]
             child = next((x for x in self.children if (isinstance(x, DirNode) and x.name == dir_name)), None)
             if child is None: # Directory doesn't exist yet
                 child = DirNode(dir_name)
+                if not core:
+                    if len(self.timestamps_short_term) == 0:
+                        child.init_time = datetime.now()
+                    else:
+                        child.init_time = self.timestamps_short_term[-1]
+                else:
+                    child.core_node = True
+                    child.init_time = self.init_time
                 self.children.append(child)
-            child.add_timestamp(self.timestamps_short_term[-1])
+            if not core:
+                child.add_timestamp(self.timestamps_short_term[-1])
             path_list.pop(0)
-            child.add_child(path_list)
+            child.add_child(path_list, core)
 
     def add_timestamp(self, ts: datetime) -> None:
         self.timestamps_short_term.append(ts)
     
     def aggregate(self) -> None:
         pass
+
+    def __str__(self):
+        return f"---- DIR Node: {self.name} ----\n" \
+            f"Core: {self.core_node}\n" \
+            f"Initial Time: {self.init_time}\n" \
+            f"# of Timestamps Short Term: {len(self.timestamps_short_term)}\n" \
+            f"Timestamps Short Term: {self.timestamps_short_term}\n" \
+            f"Children: {self.children}\n" \
+            "--------"
+
+    def __repr__(self):
+        return textwrap.indent(f"\n{self.__str__()}\n", 4 * ' ')
 
 
 class ResourceNode(INode):
     def __init__(self, resource_name: str) -> None:
         self.name = resource_name
 
+        self.init_time = None
+
         self.timestamps_short_term = []
         self.timestamps_medium_term = []
         self.timestamps_long_term = []
+
+        self.core_node = False
 
     def add_timestamp(self, ts: datetime) -> None:
         self.timestamps_short_term.append(ts)
     
     def aggregate(self) -> None:
         pass
+
+    def __str__(self):
+        return f"---- RES Node: {self.name} ----\n" \
+            f"Core: {self.core_node}\n" \
+            f"Initial Time: {self.init_time}\n" \
+            f"# of Timestamps Short Term: {len(self.timestamps_short_term)}\n" \
+            f"Timestamps Short Term: {self.timestamps_short_term}\n" \
+            "--------"
+
+    def __repr__(self):
+        return textwrap.indent(f"\n{self.__str__()}\n", 4 * ' ')

@@ -1,0 +1,23 @@
+{
+    "paths": [
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/index.html"
+        },
+        {
+            "methods": [
+                "GET",
+                "POST"
+            ],
+            "path": "/var/www/endpoint1"
+        }
+    ]
+}
