@@ -27,6 +27,7 @@ class Typing(Stage):
             for method in path['methods']:
                 temp_path_list = copy.deepcopy(path_list)
                 self.root.add_child(temp_path_list, method, True)
+        self.root.update_reliability()
 
     def run(self, dto: DTO) -> None:
         if not isinstance(dto, FilterTypingDTO):
@@ -38,6 +39,7 @@ class Typing(Stage):
         path_list = list(Path(dto.message.path).parts)
         path_list.pop(0)
         self.root.add_child(path_list, dto.message.method, False)
+        self.root.update_reliability()
 
 
 class INode(metaclass=ABCMeta):
@@ -84,6 +86,8 @@ class RootNode(INode):
                     child.init_time = self.timestamps_short_term[-1]
                 else:
                     child.core_node = True
+                    child.reliability = 1.0
+                    child.path_reliability = 1.0
                     child.init_time = self.init_time
                 getattr(self, method+"_nodes").append(child)
             if not core:
@@ -97,6 +101,7 @@ class RootNode(INode):
                     child.init_time = self.timestamps_short_term[-1]
                 else:
                     child.core_node = True
+                    child.reliability = 1.0
                     child.init_time = self.init_time
                 getattr(self, method+"_nodes").append(child)
             if not core:
@@ -110,6 +115,22 @@ class RootNode(INode):
     
     def aggregate(self) -> None:
         pass
+
+    def update_reliability(self) -> None:
+        for c in self.GET_nodes:
+            c.update_reliability(len(self.timestamps_short_term), 1.0)
+        for c in self.POST_nodes:
+            c.update_reliability(len(self.timestamps_short_term), 1.0)
+        for c in self.HEAD_nodes:
+            c.update_reliability(len(self.timestamps_short_term), 1.0)
+        for c in self.PUT_nodes:
+            c.update_reliability(len(self.timestamps_short_term), 1.0)
+        for c in self.DELETE_nodes:
+            c.update_reliability(len(self.timestamps_short_term), 1.0)
+        for c in self.OPTIONS_nodes:
+            c.update_reliability(len(self.timestamps_short_term), 1.0)
+        for c in self.PATCH_nodes:
+            c.update_reliability(len(self.timestamps_short_term), 1.0)
 
     def __str__(self):
         return f"---- ROOT Node ----\n" \
@@ -136,6 +157,8 @@ class DirNode(INode):
 
         self.core_node = False
 
+        self.reliability = 0.0
+
     def add_child(self, path_list: List, core: bool) -> None:
         if len(path_list) == 1: # Resource
             res_name = path_list[0]
@@ -146,6 +169,8 @@ class DirNode(INode):
                     child.init_time = self.timestamps_short_term[-1]
                 else:
                     child.core_node = True
+                    child.reliability = 1.0
+                    child.path_reliability = 1.0
                     child.init_time = self.init_time
                 self.children.append(child)
             if not core:
@@ -159,6 +184,7 @@ class DirNode(INode):
                     child.init_time = self.timestamps_short_term[-1]
                 else:
                     child.core_node = True
+                    child.reliability = 1.0
                     child.init_time = self.init_time
                 self.children.append(child)
             if not core:
@@ -172,12 +198,19 @@ class DirNode(INode):
     def aggregate(self) -> None:
         pass
 
+    def update_reliability(self, parent_length: float, calculated_reliability: float) -> None:
+        if not self.core_node:
+            self.reliability = len(self.timestamps_short_term) / parent_length
+        for c in self.children:
+            c.update_reliability(len(self.timestamps_short_term), calculated_reliability*self.reliability)
+    
     def __str__(self):
         return f"---- DIR Node: {self.name} ----\n" \
             f"Core: {self.core_node}\n" \
             f"Initial Time: {self.init_time}\n" \
             f"# of Timestamps Short Term: {len(self.timestamps_short_term)}\n" \
             f"Timestamps Short Term: {self.timestamps_short_term}\n" \
+            f"Reliability: {self.reliability}\n" \
             f"Children: {self.children}\n" \
             f"---- End Dir: {self.name} ----"
 
@@ -197,11 +230,19 @@ class ResourceNode(INode):
 
         self.core_node = False
 
+        self.reliability = 0.0
+        self.path_reliability = 0.0
+
     def add_timestamp(self, ts: datetime) -> None:
         self.timestamps_short_term.append(ts)
     
     def aggregate(self) -> None:
         pass
+
+    def update_reliability(self, parent_length: float, calculated_reliability: float) -> None:
+        if not self.core_node:
+            self.reliability = len(self.timestamps_short_term) / parent_length
+            self.path_reliability = calculated_reliability * self.reliability
 
     def __str__(self):
         return f"---- RES Node: {self.name} ----\n" \
@@ -209,6 +250,8 @@ class ResourceNode(INode):
             f"Initial Time: {self.init_time}\n" \
             f"# of Timestamps Short Term: {len(self.timestamps_short_term)}\n" \
             f"Timestamps Short Term: {self.timestamps_short_term}\n" \
+            f"Reliability: {self.reliability}\n" \
+            f"Path Reliability: {self.path_reliability}\n" \
             f"---- End RES: {self.name} ----"
 
     def __repr__(self):
