@@ -35,4 +35,6 @@ if __name__ == '__main__':
 
     test_dto.message.path = "/test/index.html"
     typing_stage.run(test_dto)
+    print("\n---- START TREE ----\n")
     print(typing_stage.root)
+    print("\n---- END TREE ----\n")

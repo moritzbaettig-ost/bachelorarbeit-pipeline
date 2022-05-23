@@ -1,6 +1,6 @@
 from typing import List
 from stages import Stage
-from dtos import DTO, FilterTypingDTO
+from dtos import DTO, FilterTypingDTO, TypingExtractionDTO
 import sys
 from abc import ABCMeta, abstractmethod
 from pathlib import Path
@@ -9,6 +9,7 @@ import json
 import os
 import textwrap
 import copy
+from type import Type
 
 
 class Typing(Stage):
@@ -33,14 +34,21 @@ class Typing(Stage):
         if not isinstance(dto, FilterTypingDTO):
             sys.exit("Typing: FilterTypingDTO required.")
 
+        # Expand Tree
         ts = datetime.now()
         self.root.add_timestamp(ts)
         
         path_list = list(Path(dto.message.path).parts)
         path_list.pop(0)
-        self.root.add_child(path_list, dto.message.method, False)
+        dir_node = self.root.add_child(path_list, dto.message.method, False)
         self.root.update_reliability()
+        path_reliability = dir_node.path_reliability
+        # TODO: Throw alert if Path Reliability is under specific value
 
+        # Typing
+        t = Type(dto.message.method, dto.message.path, dto.message.query != '', dto.message.body != '')
+
+        new_dto = TypingExtractionDTO(dto.message, t)
 
 class INode(metaclass=ABCMeta):
     def __init__(self) -> None:
@@ -73,7 +81,7 @@ class RootNode(INode):
         self.timestamps_medium_term = []
         self.timestamps_long_term = []
 
-    def add_child(self, path_list: List, method: str, core: bool) -> None:
+    def add_child(self, path_list: List, method: str, core: bool) -> INode:
         if len(path_list) < 2: # Resource
             if len(path_list) == 0: # Root
                 res_name = "/"
@@ -92,6 +100,7 @@ class RootNode(INode):
                 getattr(self, method+"_nodes").append(child)
             if not core:
                 child.add_timestamp(self.timestamps_short_term[-1])
+            reference = child
         else: # Directory
             dir_name = path_list[0]
             child = next((x for x in getattr(self, method+"_nodes") if (isinstance(x, DirNode) and x.name == dir_name)), None)
@@ -107,7 +116,8 @@ class RootNode(INode):
             if not core:
                 child.add_timestamp(self.timestamps_short_term[-1])
             path_list.pop(0)
-            child.add_child(path_list, core)
+            reference = child.add_child(path_list, core)
+        return reference
 
 
     def add_timestamp(self, ts: datetime) -> None:
@@ -159,7 +169,7 @@ class DirNode(INode):
 
         self.reliability = 0.0
 
-    def add_child(self, path_list: List, core: bool) -> None:
+    def add_child(self, path_list: List, core: bool) -> INode:
         if len(path_list) == 1: # Resource
             res_name = path_list[0]
             child = next((x for x in self.children if (isinstance(x, ResourceNode) and x.name == res_name)), None)
@@ -175,6 +185,7 @@ class DirNode(INode):
                 self.children.append(child)
             if not core:
                 child.add_timestamp(self.timestamps_short_term[-1])
+            reference = child
         else: # Directory
             dir_name = path_list[0]
             child = next((x for x in self.children if (isinstance(x, DirNode) and x.name == dir_name)), None)
@@ -190,7 +201,8 @@ class DirNode(INode):
             if not core:
                 child.add_timestamp(self.timestamps_short_term[-1])
             path_list.pop(0)
-            child.add_child(path_list, core)
+            reference = child.add_child(path_list, core)
+        return reference
 
     def add_timestamp(self, ts: datetime) -> None:
         self.timestamps_short_term.append(ts)

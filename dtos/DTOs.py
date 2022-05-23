@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from message import IDSHTTPMessage
+from type import Type
 
 
 @dataclass
@@ -15,3 +16,9 @@ class AcquisitionFilterDTO(DTO):
 @dataclass
 class FilterTypingDTO(DTO):
     message: IDSHTTPMessage
+
+
+@dataclass
+class TypingExtractionDTO(DTO):
+    message: IDSHTTPMessage
+    type: Type
