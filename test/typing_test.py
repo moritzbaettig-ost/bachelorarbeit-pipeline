@@ -4,12 +4,14 @@ from time import sleep
 directory = pathlib.Path(__file__)
 sys.path.append(directory.parent.parent.__str__())
 from stages.typing import Typing
+from stages.extraction import Extraction
 from message import IDSHTTPMessage
 from dtos import FilterTypingDTO
 
 
 if __name__ == '__main__':
-    typing_stage = Typing(None)
+    stage_extraction = Extraction(None)
+    typing_stage = Typing(stage_extraction)
     sleep(1)
     test_message = IDSHTTPMessage(
         source_address="99.99.99.99",
@@ -35,6 +37,6 @@ if __name__ == '__main__':
 
     test_dto.message.path = "/test/index.html"
     typing_stage.run(test_dto)
-    print("\n---- START TREE ----\n")
-    print(typing_stage.root)
-    print("\n---- END TREE ----\n")
+    #print("\n---- START TREE ----\n")
+    #print(typing_stage.root)
+    #print("\n---- END TREE ----\n")

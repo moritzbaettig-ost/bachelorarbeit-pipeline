@@ -49,6 +49,7 @@ class Typing(Stage):
         t = Type(dto.message.method, dto.message.path, dto.message.query != '', dto.message.body != '')
 
         new_dto = TypingExtractionDTO(dto.message, t)
+        self.successor.run(new_dto)
 
 class INode(metaclass=ABCMeta):
     def __init__(self) -> None:

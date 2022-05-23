@@ -1,6 +1,7 @@
 import sys
 from alerting.alert import Alerting
 from stages.acquisition import Acquisition
+from stages.extraction import Extraction
 from stages.filter import RequestFilter
 from stages.typing import Typing
 
@@ -23,9 +24,11 @@ def init_pipeline():
 
     alerting_observer = Alerting()
 
-    # TODO: Create 2 other pipeline stages, pass every successor
+    # TODO: Create 1 other pipeline stage, pass successor
+    # STAGE: Extraction
+    stage_extraction = Extraction(None)
     # STAGE: Typing
-    stage_typing = Typing(None)
+    stage_typing = Typing(stage_extraction)
     # STAGE: Filter
     stage_filter = RequestFilter(stage_typing)
     stage_filter.attach(alerting_observer)
