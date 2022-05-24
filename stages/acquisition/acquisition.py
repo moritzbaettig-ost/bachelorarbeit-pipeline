@@ -2,6 +2,7 @@ import requests
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from socketserver import ThreadingMixIn
 import urllib3
+import urllib.parse as parser
 from message import IDSHTTPMessage
 from stages import Stage
 from stages.filter import RequestFilter
@@ -127,7 +128,7 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
             body=''
         )
         if len(path_query_split) == 2:
-            m.query = path_query_split[1]
+            m.query = parser.unquote(path_query_split[1])
         if req_type == 'POST':
             l = int(self.headers['Content-Length'])
             post_data = self.rfile.read(l).decode('utf-8')

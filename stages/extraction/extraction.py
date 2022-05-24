@@ -32,4 +32,4 @@ class Extraction(Stage):
             temp_features = plugin.extract_features(dto.message, dto.type)
             features = features + temp_features
         # TODO: Extraction Stage based on type
-        print(features)
+        #print(features)
