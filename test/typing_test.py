@@ -8,12 +8,15 @@ from stages.extraction import Extraction
 from message import IDSHTTPMessage
 from dtos import FilterTypingDTO
 import os
+from alerting.alert import Alerting
 
 
 if __name__ == '__main__':
     os.chdir('..')
+    alerting_observer = Alerting()
     stage_extraction = Extraction(None)
     typing_stage = Typing(stage_extraction)
+    typing_stage.attach(alerting_observer)
     sleep(1)
     test_message = IDSHTTPMessage(
         source_address="99.99.99.99",

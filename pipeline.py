@@ -29,6 +29,7 @@ def init_pipeline():
     stage_extraction = Extraction(None)
     # STAGE: Typing
     stage_typing = Typing(stage_extraction)
+    stage_typing.attach(alerting_observer)
     # STAGE: Filter
     stage_filter = RequestFilter(stage_typing)
     stage_filter.attach(alerting_observer)

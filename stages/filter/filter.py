@@ -24,6 +24,7 @@ class RequestFilter(Stage, IObservable):
             importlib.import_module(f.split('.')[0], '.').Plugin()
             for f in next(os.walk('stages/filter/plugins'))[2]
         ]
+        self._observers = []
         super().__init__(successor)
 
     def run(self, dto: DTO) -> None:
@@ -37,8 +38,6 @@ class RequestFilter(Stage, IObservable):
                 return
         new_dto = FilterTypingDTO(message=dto.message)
         self.successor.run(new_dto)
-
-    _observers: List[IObserver] = []
 
     def attach(self, observer: IObserver) -> None:
         self._observers.append(observer)

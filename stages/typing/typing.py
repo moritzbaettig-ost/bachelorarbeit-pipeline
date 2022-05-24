@@ -10,12 +10,16 @@ import os
 import textwrap
 import copy
 from type import Type
+from alerting.IObservable import IObservable
+from alerting.IObserver import IObserver
+from alerting.alert import Alert
 
 
-class Typing(Stage):
+class Typing(Stage, IObservable):
     def __init__(self, successor: 'Stage'):
         self.root = RootNode(datetime.now())
         self.init_core()
+        self._observers = []
         super().__init__(successor)
 
     def init_core(self):
@@ -43,13 +47,29 @@ class Typing(Stage):
         dir_node = self.root.add_child(path_list, dto.message.method, False)
         self.root.update_reliability()
         path_reliability = dir_node.path_reliability
+        
         # TODO: Throw alert if Path Reliability is under specific value
-
+        RELIABILITY_THRESHOLD = 0.2
+        if path_reliability < RELIABILITY_THRESHOLD:
+            alert = Alert(msg=f"Path unreliable ({path_reliability})")
+            self.notify(alert)
+            return
+        
         # Typing
         t = Type(dto.message.method, dto.message.path, dto.message.query != '', dto.message.body != '')
 
         new_dto = TypingExtractionDTO(dto.message, t)
         self.successor.run(new_dto)
+
+    def attach(self, observer: IObserver) -> None:
+        self._observers.append(observer)
+
+    def detach(self, observer: IObserver) -> None:
+        self._observers.remove(observer)
+
+    def notify(self, alert: Alert) -> None:
+        for observer in self._observers:
+            observer.update(self, alert)
 
 class INode(metaclass=ABCMeta):
     def __init__(self) -> None:
