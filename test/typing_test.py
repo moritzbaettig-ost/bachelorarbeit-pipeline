@@ -7,9 +7,11 @@ from stages.typing import Typing
 from stages.extraction import Extraction
 from message import IDSHTTPMessage
 from dtos import FilterTypingDTO
+import os
 
 
 if __name__ == '__main__':
+    os.chdir('..')
     stage_extraction = Extraction(None)
     typing_stage = Typing(stage_extraction)
     sleep(1)

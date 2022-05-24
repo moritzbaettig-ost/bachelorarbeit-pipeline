@@ -6,11 +6,12 @@ from alerting.IObservable import IObservable
 from alerting.IObserver import IObserver
 from alerting.alert import Alert
 from dtos.DTOs import DTO, AcquisitionFilterDTO, FilterTypingDTO
+from message import IDSHTTPMessage
 from stages import Stage
 
 
 class FilterPluginInterface:
-    def filter_request(self, req: str) -> tuple[bool, str]:
+    def filter_request(self, message: IDSHTTPMessage) -> tuple[bool, str]:
         pass
 
 

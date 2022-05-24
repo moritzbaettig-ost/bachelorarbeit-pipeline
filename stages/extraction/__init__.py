@@ -1,1 +1,1 @@
-from .extraction import Extraction
+from .extraction import Extraction, ExtractionPluginInterface
