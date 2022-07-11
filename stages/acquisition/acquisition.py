@@ -132,7 +132,7 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
         if req_type == 'POST':
             l = int(self.headers['Content-Length'])
             post_data = self.rfile.read(l).decode('utf-8')
-            m.body=post_data
+            m.body=parser.unquote(post_data)
 
         dto = AcquisitionFilterDTO(message=m)
         self.successor.run(dto)

@@ -27,9 +27,9 @@ class Extraction(Stage):
     def run(self, dto: DTO) -> None:
         if not isinstance(dto, TypingExtractionDTO):
             sys.exit("Typing: FilterTypingDTO required.")
-        features = []
+        features = {}
         for plugin in self.plugins:
             temp_features = plugin.extract_features(dto.message, dto.type)
-            features = features + temp_features
+            features.update(temp_features)
         # TODO: Extraction Stage based on type
         #print(features)

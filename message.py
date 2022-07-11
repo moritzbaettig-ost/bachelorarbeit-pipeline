@@ -11,6 +11,15 @@ class IDSHTTPMessage:
     protocol_version: str
     header: HTTPMessage
     body: str
+
+    def string_for_prcessing(self):
+        tmp = ''
+        if self.query != '':
+            tmp = '?'
+        s = f"{self.method} {self.path}{tmp}{self.query} {self.protocol_version}\n" \
+            f"{str(self.header)}\n" \
+            f"{self.body}"
+        return s
     
     def __str__(self):
         tmp = ''
@@ -22,3 +31,6 @@ class IDSHTTPMessage:
             f"{str(self.header)}\n" \
             f"{self.body}"
         return s
+
+    def __len__(self):
+        return len(self.string_for_prcessing())
