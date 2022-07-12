@@ -431,7 +431,78 @@ class ResourceNode(INode):
         self.timestamps_short_term.append(ts)
     
     def aggregate(self) -> None:
-        pass
+        """
+        Aggregates the Timestamps in the timestamps_short_term list after 1h into the timestamps_medium_term list.
+        Aggregates the Timestamps in the timestamps_medium_term list after 24h into the timestamps_long_term list.
+        Removes all entries older than 7 days from the timestamps_long_term list.
+        """
+
+        # Set the short term aggregation time in seconds (Should be 3600)
+        short_term_aggregation = 5
+        # Set the medium term aggregation time in seconds (Should be 86400)
+        medium_term_aggregation = 20
+        # Set the long term aggregation time in seconds (Should be 604800)
+        long_term_aggregation = 100
+
+        # Start short term aggregation
+        for t in self.timestamps_short_term:
+            ts = datetime.now()
+            # Time difference between entry and current time in seconds
+            sec = (ts - t).total_seconds()
+            # Check if short term entry needs to be aggregated
+            if sec > short_term_aggregation:
+                # Check if medium term list is not empty
+                if len(self.timestamps_medium_term) > 0:
+                    # Get the last timestamp from the medium term list
+                    last_key = self.timestamps_medium_term[-1][0]
+                    # Check if a new timestamp needs to be added to the medium term list
+                    if (ts - last_key).total_seconds() > short_term_aggregation:
+                        # Add new timestamp tuple to the medium term list
+                        self.timestamps_medium_term.append(tuple((ts, 1)))
+                    else:
+                        # Increase the count at the latest timestamp by 1
+                        self.timestamps_medium_term[-1] = tuple(
+                            (self.timestamps_medium_term[-1][0], self.timestamps_medium_term[-1][1] + 1))
+                else:
+                    # Add the first entry to the medium term list
+                    self.timestamps_medium_term.append(tuple((ts, 1)))
+                # Remove the aggregated timestamp from the short term list
+                self.timestamps_short_term.remove(t)
+
+        # Start medium term aggregation
+        for t in self.timestamps_medium_term:
+            ts = datetime.now()
+            # Time difference between entry and current time in seconds
+            sec = (ts - t[0]).total_seconds()
+            # Check if medium term entry needs to be aggregated
+            if sec > medium_term_aggregation:
+                # Check if long term list is not empty
+                if len(self.timestamps_long_term) > 0:
+                    # Get the last timestamp from the long term list
+                    last_key = self.timestamps_long_term[-1][0]
+                    # Check if a new timestamp needs to be added to the long term list
+                    if (ts - last_key).total_seconds() > medium_term_aggregation:
+                        # Add new timestamp tuple to the long term list
+                        self.timestamps_long_term.append(tuple((ts, t[1])))
+                    else:
+                        # Increase the count at the latest timestamp by 1
+                        self.timestamps_long_term[-1] = tuple(
+                            (self.timestamps_long_term[-1][0], self.timestamps_long_term[-1][1] + t[1]))
+                else:
+                    # Add the first entry to the long term list
+                    self.timestamps_long_term.append(tuple((ts, t[1])))
+                # Remove the aggregated timestamp from the medium term list
+                self.timestamps_medium_term.remove(t)
+
+        # Start long term aggregation
+        for t in self.timestamps_long_term:
+            ts = datetime.now()
+            # Time difference between entry and current time in seconds
+            sec = (ts - t[0]).total_seconds()
+            # Check if long term entry needs to be removed
+            if sec > long_term_aggregation:
+                # Remove old timestamps from the long term list
+                self.timestamps_long_term.remove(t)
 
     def update_reliability(self, parent_length: float, calculated_reliability: float) -> None:
         if not self.core_node:
