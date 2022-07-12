@@ -43,6 +43,9 @@ class Typing(Stage, IObservable):
         ts = datetime.now()
         self.root.add_timestamp(ts)
 
+        # Start maintenance jobs
+        self.root.aggregate()
+
         path_list = list(Path(dto.message.path).parts)
         path_list.pop(0)
         dir_node = self.root.add_child(path_list, dto.message.method, False)
@@ -71,13 +74,6 @@ class Typing(Stage, IObservable):
     def notify(self, alert: Alert) -> None:
         for observer in self._observers:
             observer.update(self, alert)
-
-    def aggregate(self) -> None:
-        """
-        This methode starts the aggregation of the tre initialised by the maintenance job
-        """
-        self.root.aggregate()
-        threading.Timer(interval=1, function=self.aggregate()).start()
 
 
 
@@ -199,14 +195,14 @@ class RootNode(INode):
                     # Check if a new timestamp needs to be added to the medium term list
                     if (ts - last_key).total_seconds() > short_term_aggregation:
                         # Add new timestamp tuple to the medium term list
-                        self.timestamps_medium_term.append(tuple((ts, 1)))
+                        self.timestamps_medium_term.append(tuple((t, 1)))
                     else:
                         # Increase the count at the latest timestamp by 1
                         self.timestamps_medium_term[-1] = tuple(
                             (self.timestamps_medium_term[-1][0], self.timestamps_medium_term[-1][1] + 1))
                 else:
                     # Add the first entry to the medium term list
-                    self.timestamps_medium_term.append(tuple((ts, 1)))
+                    self.timestamps_medium_term.append(tuple((t, 1)))
                 # Remove the aggregated timestamp from the short term list
                 self.timestamps_short_term.remove(t)
 
@@ -224,14 +220,14 @@ class RootNode(INode):
                     # Check if a new timestamp needs to be added to the long term list
                     if (ts - last_key).total_seconds() > medium_term_aggregation:
                         # Add new timestamp tuple to the long term list
-                        self.timestamps_long_term.append(tuple((ts, t[1])))
+                        self.timestamps_long_term.append(tuple((t[0], t[1])))
                     else:
                         # Increase the count at the latest timestamp by 1
                         self.timestamps_long_term[-1] = tuple(
                             (self.timestamps_long_term[-1][0], self.timestamps_long_term[-1][1] + t[1]))
                 else:
                     # Add the first entry to the long term list
-                    self.timestamps_long_term.append(tuple((ts, t[1])))
+                    self.timestamps_long_term.append(tuple((t[0], t[1])))
                 # Remove the aggregated timestamp from the medium term list
                 self.timestamps_medium_term.remove(t)
 
@@ -244,6 +240,9 @@ class RootNode(INode):
             if sec > long_term_aggregation:
                 # Remove old timestamps from the long term list
                 self.timestamps_long_term.remove(t)
+
+        # Start the job again in 60 sec
+        #threading.Timer(interval=60, function=self.aggregate()).start()
 
     def update_reliability(self) -> None:
         for c in self.GET_nodes:
@@ -267,6 +266,8 @@ class RootNode(INode):
                f"Initial Time: {self.init_time}\n" \
                f"# of Timestamps Short Term: {len(self.timestamps_short_term)}\n" \
                f"Timestamps Short Term: {self.timestamps_short_term}\n" \
+               f"Timestamps Medium Term: {self.timestamps_medium_term}\n" \
+               f"Timestamps Long Term: {self.timestamps_long_term}\n" \
                f"GET Nodes: {self.GET_nodes}\n" \
                f"POST Nodes: {self.POST_nodes}\n" \
                "---- End ROOT ----"
@@ -357,14 +358,14 @@ class DirNode(INode):
                     # Check if a new timestamp needs to be added to the medium term list
                     if (ts - last_key).total_seconds() > short_term_aggregation:
                         # Add new timestamp tuple to the medium term list
-                        self.timestamps_medium_term.append(tuple((ts, 1)))
+                        self.timestamps_medium_term.append(tuple((t, 1)))
                     else:
                         # Increase the count at the latest timestamp by 1
                         self.timestamps_medium_term[-1] = tuple(
                             (self.timestamps_medium_term[-1][0], self.timestamps_medium_term[-1][1] + 1))
                 else:
                     # Add the first entry to the medium term list
-                    self.timestamps_medium_term.append(tuple((ts, 1)))
+                    self.timestamps_medium_term.append(tuple((t, 1)))
                 # Remove the aggregated timestamp from the short term list
                 self.timestamps_short_term.remove(t)
 
@@ -382,14 +383,14 @@ class DirNode(INode):
                     # Check if a new timestamp needs to be added to the long term list
                     if (ts - last_key).total_seconds() > medium_term_aggregation:
                         # Add new timestamp tuple to the long term list
-                        self.timestamps_long_term.append(tuple((ts, t[1])))
+                        self.timestamps_long_term.append(tuple((t[0], t[1])))
                     else:
                         # Increase the count at the latest timestamp by 1
                         self.timestamps_long_term[-1] = tuple(
                             (self.timestamps_long_term[-1][0], self.timestamps_long_term[-1][1] + t[1]))
                 else:
                     # Add the first entry to the long term list
-                    self.timestamps_long_term.append(tuple((ts, t[1])))
+                    self.timestamps_long_term.append(tuple((t[0], t[1])))
                 # Remove the aggregated timestamp from the medium term list
                 self.timestamps_medium_term.remove(t)
 
@@ -440,6 +441,8 @@ class DirNode(INode):
                f"Initial Time: {self.init_time}\n" \
                f"# of Timestamps Short Term: {len(self.timestamps_short_term)}\n" \
                f"Timestamps Short Term: {self.timestamps_short_term}\n" \
+               f"Timestamps Medium Term: {self.timestamps_medium_term}\n" \
+               f"Timestamps Long Term: {self.timestamps_long_term}\n" \
                f"Reliability: {self.reliability}\n" \
                f"Children: {self.children}\n" \
                f"---- End Dir: {self.name} ----"
@@ -494,14 +497,14 @@ class ResourceNode(INode):
                     # Check if a new timestamp needs to be added to the medium term list
                     if (ts - last_key).total_seconds() > short_term_aggregation:
                         # Add new timestamp tuple to the medium term list
-                        self.timestamps_medium_term.append(tuple((ts, 1)))
+                        self.timestamps_medium_term.append(tuple((t, 1)))
                     else:
                         # Increase the count at the latest timestamp by 1
                         self.timestamps_medium_term[-1] = tuple(
                             (self.timestamps_medium_term[-1][0], self.timestamps_medium_term[-1][1] + 1))
                 else:
                     # Add the first entry to the medium term list
-                    self.timestamps_medium_term.append(tuple((ts, 1)))
+                    self.timestamps_medium_term.append(tuple((t, 1)))
                 # Remove the aggregated timestamp from the short term list
                 self.timestamps_short_term.remove(t)
 
@@ -519,14 +522,14 @@ class ResourceNode(INode):
                     # Check if a new timestamp needs to be added to the long term list
                     if (ts - last_key).total_seconds() > medium_term_aggregation:
                         # Add new timestamp tuple to the long term list
-                        self.timestamps_long_term.append(tuple((ts, t[1])))
+                        self.timestamps_long_term.append(tuple((t[0], t[1])))
                     else:
                         # Increase the count at the latest timestamp by 1
                         self.timestamps_long_term[-1] = tuple(
                             (self.timestamps_long_term[-1][0], self.timestamps_long_term[-1][1] + t[1]))
                 else:
                     # Add the first entry to the long term list
-                    self.timestamps_long_term.append(tuple((ts, t[1])))
+                    self.timestamps_long_term.append(tuple((t[0], t[1])))
                 # Remove the aggregated timestamp from the medium term list
                 self.timestamps_medium_term.remove(t)
 
@@ -576,6 +579,8 @@ class ResourceNode(INode):
                f"Initial Time: {self.init_time}\n" \
                f"# of Timestamps Short Term: {len(self.timestamps_short_term)}\n" \
                f"Timestamps Short Term: {self.timestamps_short_term}\n" \
+               f"Timestamps Medium Term: {self.timestamps_medium_term}\n" \
+               f"Timestamps Long Term: {self.timestamps_long_term}\n" \
                f"Reliability: {self.reliability}\n" \
                f"Path Reliability: {self.path_reliability}\n" \
                f"---- End RES: {self.name} ----"

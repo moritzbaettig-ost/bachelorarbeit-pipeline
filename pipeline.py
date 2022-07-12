@@ -37,19 +37,8 @@ def init_pipeline():
     # STAGE: Acquisition
     stage_acquisition = Acquisition(stage_filter, host)
 
-    # start pipeline maintenance jobs
-    maintenance_jobs(stage_typing)
-
     # Start Pipeline
     stage_acquisition.run(None)
-
-
-def maintenance_jobs(typing_stage: Stage) -> None:
-    """
-    This methode contains all maintenance jobs for the data pipeline
-    """
-    # Start the aggregation task for the typing stage
-    typing_stage.aggregate()
 
 
 if __name__ == '__main__':
