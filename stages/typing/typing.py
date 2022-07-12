@@ -236,19 +236,19 @@ class RootNode(INode):
 
     def update_reliability(self) -> None:
         for c in self.GET_nodes:
-            c.update_reliability(len(self.timestamps_short_term), 1.0)
+            c.update_reliability(len(self.timestamps_short_term),0,0, 1.0)
         for c in self.POST_nodes:
-            c.update_reliability(len(self.timestamps_short_term), 1.0)
+            c.update_reliability(len(self.timestamps_short_term),0,0, 1.0)
         for c in self.HEAD_nodes:
-            c.update_reliability(len(self.timestamps_short_term), 1.0)
+            c.update_reliability(len(self.timestamps_short_term),0,0, 1.0)
         for c in self.PUT_nodes:
-            c.update_reliability(len(self.timestamps_short_term), 1.0)
+            c.update_reliability(len(self.timestamps_short_term),0,0, 1.0)
         for c in self.DELETE_nodes:
-            c.update_reliability(len(self.timestamps_short_term), 1.0)
+            c.update_reliability(len(self.timestamps_short_term),0,0, 1.0)
         for c in self.OPTIONS_nodes:
-            c.update_reliability(len(self.timestamps_short_term), 1.0)
+            c.update_reliability(len(self.timestamps_short_term),0,0, 1.0)
         for c in self.PATCH_nodes:
-            c.update_reliability(len(self.timestamps_short_term), 1.0)
+            c.update_reliability(len(self.timestamps_short_term),0,0, 1.0)
 
     def __str__(self):
         return f"---- ROOT Node ----\n" \
