@@ -39,6 +39,7 @@ if __name__ == '__main__':
     typing_stage.run(test_dto)
     typing_stage.run(test_dto)
     typing_stage.run(test_dto)
+    typing_stage.root.aggregate()
 
     test_dto.message.path = "/test/index.html"
     typing_stage.run(test_dto)
