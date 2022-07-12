@@ -525,9 +525,33 @@ class ResourceNode(INode):
                 # Remove old timestamps from the long term list
                 self.timestamps_long_term.remove(t)
 
-    def update_reliability(self, parent_length: float, calculated_reliability: float) -> None:
+    def update_reliability(self, parent_short_term_length: int, parent_medium_term_length: int, parent_long_term_length: int, calculated_reliability: float) -> None:
         if not self.core_node:
-            self.reliability = len(self.timestamps_short_term) / parent_length
+            medium_term_length = 0
+            long_term_length = 0
+            for t in self.timestamps_medium_term:
+                medium_term_length = medium_term_length + t[1]
+
+            for t in self.timestamps_long_term:
+                long_term_length = long_term_length + t[1]
+
+            # If no core node the reliability is calculated by number of time stamps of this node divided by the number of time stamps of the parent node
+            if not self.core_node:
+                # self.reliability = len(self.timestamps_short_term) / parent_length
+                ts = datetime.now()
+                # Check if node is up less than 1h
+                if (ts - self.init_time).total_seconds() < 3600:
+                    self.reliability = len(self.timestamps_short_term) / parent_short_term_length
+
+                # Check if node is up more than 1h and less than 24h
+                elif 3600 < (ts - self.init_time).total_seconds() < 86400:
+                    self.reliability = (len(self.timestamps_short_term) + medium_term_length) / (
+                                parent_short_term_length + parent_medium_term_length)
+                # Default Node is up more than 24h
+                else:
+                    self.reliability = (len(self.timestamps_short_term) + medium_term_length + long_term_length) / (
+                                parent_short_term_length + parent_medium_term_length + parent_long_term_length)
+
             self.path_reliability = calculated_reliability * self.reliability
 
     def __str__(self):
