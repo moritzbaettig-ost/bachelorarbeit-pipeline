@@ -6,6 +6,7 @@ import sys
 from type import Type
 import os
 import importlib
+import ZODB, ZODB.FileStorage
 
 
 class ExtractionPluginInterface:
@@ -31,5 +32,12 @@ class Extraction(Stage):
         for plugin in self.plugins:
             temp_features = plugin.extract_features(dto.message, dto.type)
             features.update(temp_features)
-        # TODO: Extraction Stage based on type
-        #print(features)
+        # Save the feature dict in the database with the type as key
+        storage = ZODB.FileStorage.FileStorage('db.fs')
+        db = ZODB.DB(storage)
+        connection = db.open()
+        root = connection.root
+        if root.features[dto.type] == None:
+            root.features[dto.type] = []
+        root.features[dto.type].append(features)
+        print(root.features)

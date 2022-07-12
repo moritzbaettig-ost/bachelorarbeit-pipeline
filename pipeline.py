@@ -4,6 +4,9 @@ from stages.acquisition import Acquisition
 from stages.extraction import Extraction
 from stages.filter import RequestFilter
 from stages.typing import Typing
+import ZODB, ZODB.FileStorage
+from BTrees import _OOBTree
+import transaction
 
 host = ''
 mode = ''
@@ -40,5 +43,16 @@ def init_pipeline():
     stage_acquisition.run(None)
 
 
+def init_db():
+    storage = ZODB.FileStorage.FileStorage('db.fs')
+    db = ZODB.DB(storage)
+    connection = db.open()
+    root = connection.root
+    root.features = _OOBTree.BTree()
+    root.typing_tree = _OOBTree.BTree()
+    transaction.commit()
+    db.close()
+
 if __name__ == '__main__':
+    #init_db()
     init_pipeline()
