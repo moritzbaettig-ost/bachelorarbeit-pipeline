@@ -7,6 +7,7 @@ from type import Type
 import os
 import importlib
 import ZODB, ZODB.FileStorage
+import transaction
 
 
 class ExtractionPluginInterface:
@@ -36,8 +37,16 @@ class Extraction(Stage):
         storage = ZODB.FileStorage.FileStorage('db.fs')
         db = ZODB.DB(storage)
         connection = db.open()
-        root = connection.root
-        if root.features[dto.type] == None:
-            root.features[dto.type] = []
-        root.features[dto.type].append(features)
-        print(root.features)
+        root = connection.root()
+        if not "features" in root:
+            root["features"] = {}
+        db_features = root["features"]
+
+        if not dto.type in db_features:
+            db_features[dto.type] = []
+        db_features[dto.type].append(features)
+
+        root["features"] = db_features
+        transaction.commit()
+        #print(root.items())
+        connection.close()

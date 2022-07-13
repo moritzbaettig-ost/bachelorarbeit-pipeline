@@ -259,6 +259,6 @@ def simulate_snap():
     r = requests.get(url="http://localhost:80/web/tmpfs/snap.jpg", auth=("admin", "admin"), headers=my_headers)
     print(r)
 
-simulate_initial_connection()
-simulate_moving()
+#simulate_initial_connection()
+#simulate_moving()
 simulate_snap()
