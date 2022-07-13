@@ -33,7 +33,9 @@ class Extraction(Stage):
         for plugin in self.plugins:
             temp_features = plugin.extract_features(dto.message, dto.type)
             features.update(temp_features)
+        print(features)
         # Save the feature dict in the database with the type as key
+        """
         storage = ZODB.FileStorage.FileStorage('db.fs')
         db = ZODB.DB(storage)
         connection = db.open()
@@ -50,3 +52,4 @@ class Extraction(Stage):
         transaction.commit()
         #print(root.items())
         connection.close()
+        """

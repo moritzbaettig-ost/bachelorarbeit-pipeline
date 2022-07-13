@@ -2,6 +2,7 @@ from typing import Dict
 from stages.extraction import ExtractionPluginInterface
 from message import IDSHTTPMessage
 from type import Type
+from sklearn.feature_extraction.text import CountVectorizer
 
 
 class Plugin(ExtractionPluginInterface):
@@ -50,6 +51,7 @@ class Plugin(ExtractionPluginInterface):
         # Body
         if type.has_body:
             dictRequest['body'] = message.body
+
             count_lower=0
             count_upper=0
             count_numeric=0
@@ -72,4 +74,19 @@ class Plugin(ExtractionPluginInterface):
             dictRequest['body_spaces']=count_spaces
             dictRequest['body_specialchar']=count_specialchar
 
+            dictRequest['body_monograms'] = self.get_ngram_dict(1, message.body)
+            dictRequest['body_bigrams'] = self.get_ngram_dict(2, message.body)
+            dictRequest['body_hexagrams'] = self.get_ngram_dict(6, message.body)
+
         return dictRequest
+
+
+    def get_ngram_dict(self, n, data):
+        vectorizer = CountVectorizer(ngram_range=(n, n), analyzer='char')
+        ngrams = vectorizer.fit_transform([data])
+        ngrams = ngrams.toarray()[0]
+        ngram_features = vectorizer.get_feature_names_out()
+        ngrams_freq = {}
+        for tag, count in zip(ngram_features, ngrams):
+            ngrams_freq[tag] = count
+        return ngrams_freq
