@@ -38,7 +38,7 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
         return
 
     def do_GET(self, body=True):
-        self.process_request('GET')
+        self.process_request('GET', '')
         sent = False
         try:
             url = 'http://{}{}'.format(self.hostname, self.path)
@@ -62,17 +62,15 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
                 self.send_error(404, 'error trying to proxy')
 
     def do_POST(self, body=True):
-        self.process_request('POST')
+        content_len = int(self.headers.get('content-length'))
+        post_body = self.rfile.read(content_len)
+        self.process_request('POST', post_body)
         sent = False
         try:
             url = 'http://{}{}'.format(self.hostname, self.path)
-            content_len = int(self.headers.get('content-length'))
-            post_body = self.rfile.read(content_len)
             req_header = self.parse_headers()
-
             resp = requests.post(url, data=post_body, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
             sent = True
-
             self.send_response(resp.status_code)
             self.send_resp_headers(resp)
             if body:
@@ -114,7 +112,7 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
         }
         return headers
 
-    def process_request(self, req_type):
+    def process_request(self, req_type, post_body):
         path_query_split = self.path.split('?', 1)
         m = IDSHTTPMessage(
             source_address=self.client_address[0],
@@ -123,17 +121,17 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
             query='',
             protocol_version=self.protocol_version,
             header=self.headers,
-            body=''
+            body=post_body
         )
         if len(path_query_split) == 2:
             m.query = parser.unquote(path_query_split[1])
         if req_type == 'POST':
-            l = int(self.headers['Content-Length'])
-            post_data = self.rfile.read(l).decode('utf-8')
-            m.body=parser.unquote(post_data)
+            m.body = m.body.decode('utf-8')
+            m.body=parser.unquote(m.body)
         print(m)
         dto = AcquisitionFilterDTO(message=m)
         self.successor.run(dto)
+
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
