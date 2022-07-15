@@ -48,6 +48,10 @@ class Plugin(ExtractionPluginInterface):
             dictRequest['path_query_spaces']=count_spaces
             dictRequest['path_query_specialchar']=count_specialchar
 
+            dictRequest['query_monograms'] = self.get_ngram_dict(1, message.query)
+            dictRequest['query_bigrams'] = self.get_ngram_dict(2, message.query)
+            dictRequest['query_hexagrams'] = self.get_ngram_dict(6, message.query)
+
         # Body
         if type.has_body:
             dictRequest['body'] = message.body
