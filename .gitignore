@@ -137,3 +137,5 @@ db.fs
 db.fs.index
 db.fs.lock
 db.fs.tmp
+db_tmp/
+zeo.config
