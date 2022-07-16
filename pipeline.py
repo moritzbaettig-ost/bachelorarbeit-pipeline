@@ -1,5 +1,6 @@
 import sys
 from alerting.alert import Alerting
+from stages import Stage
 from stages.acquisition import Acquisition
 from stages.extraction import Extraction
 from stages.filter import RequestFilter

@@ -31,17 +31,33 @@ if __name__ == '__main__':
     
     test_dto.message.path = "/"
     typing_stage.run(test_dto)
+    sleep(1.0)
     typing_stage.run(test_dto)
-
+    sleep(1.0)
     test_dto.message.path = "/index.html"
     typing_stage.run(test_dto)
-    sleep(0.5)
+    sleep(1.0)
     typing_stage.run(test_dto)
+    sleep(1.0)
     typing_stage.run(test_dto)
+    sleep(1.0)
     typing_stage.run(test_dto)
-
+    sleep(1.0)
     test_dto.message.path = "/test/index.html"
     typing_stage.run(test_dto)
-    #print("\n---- START TREE ----\n")
-    #print(typing_stage.root)
-    #print("\n---- END TREE ----\n")
+    sleep(1.0)
+    typing_stage.run(test_dto)
+    sleep(1.0)
+    typing_stage.run(test_dto)
+
+    sleep(10.0)
+    test_dto.message.path = "/test/index2.html"
+    typing_stage.run(test_dto)
+    typing_stage.run(test_dto)
+    sleep(10.0)
+    test_dto.message.path = "/test/index2.html"
+    typing_stage.run(test_dto)
+    typing_stage.run(test_dto)
+    print("\n---- START TREE ----\n")
+    print(typing_stage.root)
+    print("\n---- END TREE ----\n")
