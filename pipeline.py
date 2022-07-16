@@ -5,29 +5,29 @@ from stages.acquisition import Acquisition
 from stages.extraction import Extraction
 from stages.filter import RequestFilter
 from stages.typing import Typing
-
-host = ''
-mode = ''
+import argparse
 
 
 def init_pipeline():
     print("Initializing Pipeline")
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--host', type=str, default=None)
+    parser.add_argument('--mode', choices=['train', 'test'], default='test')
+    parser.add_argument('--logging', action=argparse.BooleanOptionalAction)
+    args = parser.parse_args()
 
-    if len(sys.argv) != 3:
+    if len(sys.argv) > 4 or len(sys.argv) < 3:
         sys.exit("Illegal amount of arguments")
 
-    global host
-    host = sys.argv[1]
-    global mode
-    mode = sys.argv[2]
-
-    print(f"Running pipeline with host {host} and mode {mode}")
+    print(f"Running pipeline with host {args.host} and mode {args.mode}")
+    if args.logging:
+        print("Logging activated")
 
     alerting_observer = Alerting()
 
     # TODO: Create 1 other pipeline stage, pass successor
     # STAGE: Extraction
-    stage_extraction = Extraction(None)
+    stage_extraction = Extraction(None, args.mode, args.logging)
     # STAGE: Typing
     stage_typing = Typing(stage_extraction)
     stage_typing.attach(alerting_observer)
@@ -35,8 +35,8 @@ def init_pipeline():
     stage_filter = RequestFilter(stage_typing)
     stage_filter.attach(alerting_observer)
     # STAGE: Acquisition
-    stage_acquisition = Acquisition(stage_filter, host)
-
+    stage_acquisition = Acquisition(stage_filter, args.host)
+    
     # Start Pipeline
     stage_acquisition.run(None)
 
