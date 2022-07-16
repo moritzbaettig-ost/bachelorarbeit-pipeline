@@ -22,3 +22,9 @@ class FilterTypingDTO(DTO):
 class TypingExtractionDTO(DTO):
     message: IDSHTTPMessage
     type: Type
+
+@dataclass
+class ExtractionModelDTO(DTO):
+    features: dict
+    type: Type
+    
