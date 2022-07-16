@@ -4,6 +4,7 @@ from stages import Stage
 from stages.acquisition import Acquisition
 from stages.extraction import Extraction
 from stages.filter import RequestFilter
+from stages.model import Model
 from stages.typing import Typing
 import argparse
 
@@ -25,9 +26,10 @@ def init_pipeline():
 
     alerting_observer = Alerting()
 
-    # TODO: Create 1 other pipeline stage, pass successor
+    # STAGE: Model
+    stage_model = Model(None)
     # STAGE: Extraction
-    stage_extraction = Extraction(None, args.mode, args.logging)
+    stage_extraction = Extraction(stage_model, args.mode, args.logging)
     # STAGE: Typing
     stage_typing = Typing(stage_extraction)
     stage_typing.attach(alerting_observer)
