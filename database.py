@@ -11,6 +11,8 @@ class Database():
             self.write_object("body_ngrams", {})
         if not self.if_exists("query_ngrams"):
             self.write_object("query_ngrams", {})
+        if not self.if_exists("data"):
+            self.write_object("data", [])
 
     def get_object(self, name):
         while self.wait:

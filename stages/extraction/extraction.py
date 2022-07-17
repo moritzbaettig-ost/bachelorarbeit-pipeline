@@ -91,23 +91,16 @@ class Extraction(Stage):
             del features['query_bigrams']
             del features['query_hexagrams']
         
-        """
-        if self.logging:
-            # Save the feature dict in the database with the type as key
-            storage = ZODB.FileStorage.FileStorage('db.fs')
-            db = ZODB.DB(storage)
-            connection = db.open()
-            root = connection.root()
-            if not "features" in root:
-                root["features"] = {}
-            db_features = root["features"]
-
-            if not dto.type in db_features:
-                db_features[dto.type] = []
-            db_features[dto.type].append(features)
-
-            root["features"] = db_features
-            transaction.commit()
-            #print(root.items())
-            connection.close()
-        """
+        if self.mode == "train":
+            # Save everything in the db so the ML model can use the data for training
+            data = {
+                "timestamp": datetime.now(),
+                "features": features,
+                "message": dto.message,
+                "type": dto.type
+            }
+            
+            db_data = self.db_handler.get_object("data")
+            db_data.append(data)
+            thread = threading.Thread(target=self.db_handler.write_object, args=("data", db_data))
+            thread.start()
