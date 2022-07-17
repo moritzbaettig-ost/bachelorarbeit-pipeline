@@ -59,7 +59,7 @@ class Typing(Stage, IObservable):
         t = Type(dto.message.method, dto.message.path, dto.message.query != '', dto.message.body != '')
 
         new_dto = TypingExtractionDTO(dto.message, t)
-        # self.successor.run(new_dto)
+        self.successor.run(new_dto)
 
     def attach(self, observer: IObserver) -> None:
         self._observers.append(observer)

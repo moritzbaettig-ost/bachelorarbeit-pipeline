@@ -1,3 +1,4 @@
+from time import sleep
 from typing import List
 from message import IDSHTTPMessage
 from stages import Stage
@@ -6,10 +7,10 @@ import sys
 from type import Type
 import os
 import importlib
-import ZODB, ZODB.FileStorage
-import transaction
 from collections import Counter
 from datetime import datetime
+from database import Database
+import threading
 
 
 class ExtractionPluginInterface:
@@ -18,7 +19,7 @@ class ExtractionPluginInterface:
 
 
 class Extraction(Stage):
-    def __init__(self, successor: 'Stage', mode: str, logging: bool):
+    def __init__(self, successor: 'Stage', mode: str, logging: bool, db_handler: Database):
         if len(os.listdir('./stages/extraction/plugins')) == 0:
             sys.exit("No extraction plugin detected. Please place default extraction plugin in the extraction plugin directory.")
         sys.path.append('./stages/extraction/plugins')
@@ -28,6 +29,7 @@ class Extraction(Stage):
         ]
         self.mode = mode
         self.logging = logging
+        self.db_handler = db_handler
         super().__init__(successor)
 
     def run(self, dto: DTO) -> None:
@@ -45,13 +47,7 @@ class Extraction(Stage):
             counter_body_bigrams = Counter(features['body_bigrams'])
             counter_body_hexagrams = Counter(features['body_hexagrams'])
 
-            storage = ZODB.FileStorage.FileStorage('db.fs')
-            db = ZODB.DB(storage)
-            connection = db.open()
-            root = connection.root()
-            if not "body_ngrams" in root:
-                root["body_ngrams"] = {}
-            db_body_ngrams = root["body_ngrams"]
+            db_body_ngrams = self.db_handler.get_object("body_ngrams")
 
             if not dto.type in db_body_ngrams:
                 db_body_ngrams[dto.type] = {
@@ -63,10 +59,8 @@ class Extraction(Stage):
             db_body_ngrams[dto.type]["bigrams"].append((datetime.now(), counter_body_bigrams))
             db_body_ngrams[dto.type]["hexagrams"].append((datetime.now(), counter_body_hexagrams))
 
-            root["body_ngrams"] = db_body_ngrams
-            transaction.commit()
-            print(root.items())
-            connection.close()
+            thread = threading.Thread(target=self.db_handler.write_object, args=("body_ngrams", db_body_ngrams))
+            thread.start()
 
             del features['body_monograms']
             del features['body_bigrams']
@@ -78,13 +72,7 @@ class Extraction(Stage):
             counter_query_bigrams = Counter(features['query_bigrams'])
             counter_query_hexagrams = Counter(features['query_hexagrams'])
 
-            storage = ZODB.FileStorage.FileStorage('db.fs')
-            db = ZODB.DB(storage)
-            connection = db.open()
-            root = connection.root()
-            if not "query_ngrams" in root:
-                root["query_ngrams"] = {}
-            db_query_ngrams = root["query_ngrams"]
+            db_query_ngrams = self.db_handler.get_object("query_ngrams")
 
             if not dto.type in db_query_ngrams:
                 db_query_ngrams[dto.type] = {
@@ -96,15 +84,14 @@ class Extraction(Stage):
             db_query_ngrams[dto.type]["bigrams"].append((datetime.now(), counter_query_bigrams))
             db_query_ngrams[dto.type]["hexagrams"].append((datetime.now(), counter_query_hexagrams))
 
-            root["query_ngrams"] = db_query_ngrams
-            transaction.commit()
-            print(root.items())
-            connection.close()
+            thread = threading.Thread(target=self.db_handler.write_object, args=("query_ngrams", db_query_ngrams))
+            thread.start()
 
             del features['query_monograms']
             del features['query_bigrams']
             del features['query_hexagrams']
         
+        """
         if self.logging:
             # Save the feature dict in the database with the type as key
             storage = ZODB.FileStorage.FileStorage('db.fs')
@@ -123,3 +110,4 @@ class Extraction(Stage):
             transaction.commit()
             #print(root.items())
             connection.close()
+        """
