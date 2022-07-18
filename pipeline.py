@@ -27,7 +27,7 @@ def init_pipeline():
     alerting_observer = Alerting()
 
     # STAGE: Model
-    stage_model = Model(None)
+    stage_model = Model(args.mode)
     # STAGE: Extraction
     stage_extraction = Extraction(stage_model, args.mode, args.logging)
     # STAGE: Typing
