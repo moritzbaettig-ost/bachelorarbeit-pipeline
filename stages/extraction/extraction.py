@@ -2,7 +2,7 @@ from time import sleep
 from typing import List
 from message import IDSHTTPMessage
 from stages import Stage
-from dtos import DTO, TypingExtractionDTO
+from dtos import DTO, TypingExtractionDTO, ExtractionModelDTO
 import sys
 from type import Type
 import os
@@ -207,10 +207,14 @@ class Extraction(Stage):
                 "timestamp": datetime.now(),
                 "features": features,
                 "message": dto.message,
-                "type": dto.type
+                "type": dto.type,
+                "label": 1
             }
             
             db_data = self.db_handler.get_object("data")
             db_data.append(data)
             thread = threading.Thread(target=self.db_handler.write_object, args=("data", db_data))
             thread.start()
+
+        new_dto = ExtractionModelDTO(features=features, type=dto.type)
+        self.successor.run(new_dto)

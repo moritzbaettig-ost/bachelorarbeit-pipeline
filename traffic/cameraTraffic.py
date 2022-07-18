@@ -265,6 +265,6 @@ def simulate_post():
     print(r)
 
 #simulate_initial_connection()
-#simulate_moving()
+simulate_moving()
 #simulate_snap()
-simulate_post()
+#simulate_post()
