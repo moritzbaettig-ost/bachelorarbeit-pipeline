@@ -29,7 +29,7 @@ def init_pipeline():
     database_handler = Database()
 
     # STAGE: Model
-    stage_model = Model(args.mode)
+    stage_model = Model(None, args.mode)
     # STAGE: Extraction
     stage_extraction = Extraction(stage_model, args.mode, args.logging, database_handler)
     # STAGE: Typing
