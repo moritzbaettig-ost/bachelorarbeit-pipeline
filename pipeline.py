@@ -7,6 +7,7 @@ from stages.filter import RequestFilter
 from stages.model import Model
 from stages.typing import Typing
 import argparse
+from database import Database
 
 
 def init_pipeline():
@@ -25,11 +26,12 @@ def init_pipeline():
         print("Logging activated")
 
     alerting_observer = Alerting()
+    database_handler = Database()
 
     # STAGE: Model
     stage_model = Model(None)
     # STAGE: Extraction
-    stage_extraction = Extraction(stage_model, args.mode, args.logging)
+    stage_extraction = Extraction(stage_model, args.mode, args.logging, database_handler)
     # STAGE: Typing
     stage_typing = Typing(stage_extraction)
     stage_typing.attach(alerting_observer)
