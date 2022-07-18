@@ -9,11 +9,24 @@ if TYPE_CHECKING:
 class IObserver(ABC):
     """
     The observer interface declares the update method, used by observables.
+
+    Methods
+    ----------
+    update(observable, alert)
+        Receives alert from observable.
     """
     
     @abstractmethod
     def update(self, observable: 'IObservable', alert: 'Alert') -> None:
         """
-        Receive alert from observable
+        Receives alert from observable.
+
+        Parameters
+        ----------
+        observable : IObservable
+            The observable from which the alert comes.
+        alert : Alert
+            The alert received from the observable.
         """
+        
         pass
