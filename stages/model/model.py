@@ -7,12 +7,17 @@ import sys
 import os
 import importlib
 
+
 class ModelPluginInterface:
-    # Define functions here
-    pass
+    def train_model(self, training_data: list, training_labels: list) -> None:
+        pass
+
+    def predict(self, predicting_data):
+        pass
+
 
 class Model(Stage, IObservable):
-    def __init__(self, successor: 'Stage'):
+    def __init__(self, successor: 'Stage', mode: str):
         if len(os.listdir('./stages/model/plugins')) == 0:
             sys.exit("No model plugin detected. Please place default model plugin in the model plugin directory.")
         sys.path.append('./stages/model/plugins')
@@ -20,6 +25,7 @@ class Model(Stage, IObservable):
             importlib.import_module(f.split('.')[0], '.').Plugin()
             for f in next(os.walk('stages/model/plugins'))[2]
         ]
+        self.mode = mode
         self._observers = []
         super().__init__(successor)
 
@@ -28,6 +34,9 @@ class Model(Stage, IObservable):
             sys.exit("Model: ExtractionModelDTO required.")
         # MODEL STAGE
         for plugin in self.plugins:
+            if self.mode == 'train':
+                plugin.train_model()
+            print(plugin.predict(dto.features))
             # define plugin iteration here
             pass
 
