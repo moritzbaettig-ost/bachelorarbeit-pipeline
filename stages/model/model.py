@@ -18,6 +18,7 @@ class ModelPluginInterface:
 
 class Model(Stage, IObservable):
     def __init__(self, successor: 'Stage', mode: str):
+        self.successor = successor
         if len(os.listdir('./stages/model/plugins')) == 0:
             sys.exit("No model plugin detected. Please place default model plugin in the model plugin directory.")
         sys.path.append('./stages/model/plugins')
@@ -27,7 +28,6 @@ class Model(Stage, IObservable):
         ]
         self.mode = mode
         self._observers = []
-        super().__init__(successor)
 
     def run(self, dto: DTO) -> None:
         if not isinstance(dto, ExtractionModelDTO):

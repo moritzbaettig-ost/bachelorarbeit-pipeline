@@ -11,8 +11,8 @@ from dtos import DTO, AcquisitionFilterDTO
 
 class Acquisition(Stage):
     def __init__(self, successor: RequestFilter, hostname: str):
+        self.successor = successor
         self.hostname = hostname
-        super().__init__(successor)
 
 
     def run(self, dto: DTO) -> None:

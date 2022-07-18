@@ -20,6 +20,7 @@ class ExtractionPluginInterface:
 
 class Extraction(Stage):
     def __init__(self, successor: 'Stage', mode: str, logging: bool, db_handler: Database):
+        self.successor = successor
         if len(os.listdir('./stages/extraction/plugins')) == 0:
             sys.exit("No extraction plugin detected. Please place default extraction plugin in the extraction plugin directory.")
         sys.path.append('./stages/extraction/plugins')
@@ -30,7 +31,6 @@ class Extraction(Stage):
         self.mode = mode
         self.logging = logging
         self.db_handler = db_handler
-        super().__init__(successor)
 
     def run(self, dto: DTO) -> None:
         if not isinstance(dto, TypingExtractionDTO):
