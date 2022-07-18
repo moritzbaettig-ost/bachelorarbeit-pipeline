@@ -194,9 +194,18 @@ class Extraction(Stage):
                 if key in current_query_hexagram_pool:
                     occurrence_hexagrams = occurrence_hexagrams + features['query_hexagrams'][key]
 
-            features['query_monograms'] = float(occurrence_monograms)/float(sum(features['query_monograms'].values()))
-            features['query_bigrams'] = float(occurrence_bigrams)/float(sum(features['query_bigrams'].values()))
-            features['query_hexagrams'] = float(occurrence_hexagrams)/float(sum(features['query_hexagrams'].values()))
+            if float(sum(features['query_monograms'].values()))>0:
+                features['query_monograms'] = float(occurrence_monograms)/float(sum(features['query_monograms'].values()))
+            else:
+                features['query_monograms'] = 0.0
+            if float(sum(features['query_bigrams'].values()))>0:
+                features['query_bigrams'] = float(occurrence_bigrams)/float(sum(features['query_bigrams'].values()))
+            else:
+                features['query_bigrams'] = 0.0
+            if float(sum(features['query_hexagrams'].values()))>0:
+                features['query_hexagrams'] = float(occurrence_hexagrams)/float(sum(features['query_hexagrams'].values()))
+            else:
+                features['query_hexagrams'] = 0.0
 
             thread = threading.Thread(target=self.db_handler.write_object, args=("query_ngrams", db_query_ngrams))
             thread.start()
@@ -208,7 +217,7 @@ class Extraction(Stage):
                 "features": features,
                 "message": dto.message,
                 "type": dto.type,
-                "label": 1
+                "label": 0
             }
             
             db_data = self.db_handler.get_object("data")
