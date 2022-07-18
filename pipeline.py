@@ -29,7 +29,8 @@ def init_pipeline():
     database_handler = Database()
 
     # STAGE: Model
-    stage_model = Model(None, args.mode)
+    stage_model = Model(None, args.mode, database_handler)
+    stage_model.attach(alerting_observer)
     # STAGE: Extraction
     stage_extraction = Extraction(stage_model, args.mode, args.logging, database_handler)
     # STAGE: Typing
