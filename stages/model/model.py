@@ -31,15 +31,9 @@ class Model(Stage, IObservable):
         self.db_handler = db_handler
         self.mode = mode
         self._observers = []
-        # Read available Fabric from the database
-        model_dict = self.db_handler.get_object("model_dict")
-        # Check if a Fabric dict was available in the database
-        if model_dict is not False:
-            # Check if the fabric is corrupt
-            if len(model_dict) > 0:
-                # Set the Fabric in the Plugin
-                for plugin in self.plugins:
-                    plugin.set_model(model_dict)
+        # Set the Fabric in the Plugin
+        for plugin in self.plugins:
+            plugin.set_model(self.db_handler)
         super().__init__(successor)
 
     def run(self, dto: DTO) -> None:

