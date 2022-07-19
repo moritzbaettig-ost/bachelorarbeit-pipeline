@@ -20,7 +20,13 @@ class Database():
         self.wait = True
         connection = self.db.open()
         root = connection.root()
-        obj = copy.deepcopy(root[name])
+        # Check if object exists in root namespace
+        if name in root:
+            # Copy the object from the database
+            obj = copy.deepcopy(root[name])
+        else:
+            # Return False if the object does not exist in the database
+            obj = False
         connection.close()
         self.wait = False
         return obj
@@ -31,7 +37,7 @@ class Database():
         self.wait = True
         connection = self.db.open()
         root = connection.root()
-        root[name] = obj
+        root[name] = copy.deepcopy(obj)
         transaction.commit()
         connection.close()
         self.wait = False

@@ -50,6 +50,7 @@ class Typing(Stage, IObservable):
 
         # TODO: Throw alert if Path Reliability is under specific value
         RELIABILITY_THRESHOLD = 0.2
+        print(path_reliability)
         if path_reliability < RELIABILITY_THRESHOLD:
             alert = Alert(msg=f"Path unreliable ({path_reliability})")
             self.notify(alert)
