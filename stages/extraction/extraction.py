@@ -217,7 +217,7 @@ class Extraction(Stage):
                 "features": features,
                 "message": dto.message,
                 "type": dto.type,
-                "label": 0
+                "label": 1
             }
             
             db_data = self.db_handler.get_object("data")

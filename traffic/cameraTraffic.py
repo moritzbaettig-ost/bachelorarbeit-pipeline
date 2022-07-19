@@ -399,7 +399,7 @@ def test():
     r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?f=2", auth=("admin", "admin"), headers=my_headers)
     print(r)
 
-TRAIN_NORMAL_TRAFFIC = True
+TRAIN_NORMAL_TRAFFIC = False
 
 if TRAIN_NORMAL_TRAFFIC:
     #simulate_initial_connection()
