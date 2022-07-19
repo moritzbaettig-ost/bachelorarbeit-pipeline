@@ -249,12 +249,32 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
         return x | y
 
     def set_header(self):
+        """
+        Sets the hostname of the secured service in the HTTP header.
+
+        Returns
+        ----------
+        headers
+            Headers for the message to the secured service.
+        """
+
         headers = {
             'Host': self.hostname
         }
         return headers
 
     def process_request(self, req_type, post_body):
+        """
+        Processes the gathered HTTP request by creating a IDSHTTPMessage object and passing it to the next stage in the pipeline.
+
+        Parameters
+        ----------
+        req_type : str
+            Type of the request
+        post_body : bool
+            If the request has a body
+        """
+
         path_query_split = self.path.split('?', 1)
         m = IDSHTTPMessage(
             source_address=self.client_address[0],
@@ -277,4 +297,6 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
 
 
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
-    """Handle requests in a separate thread."""
+    """
+    Handle requests in a separate thread.
+    """
