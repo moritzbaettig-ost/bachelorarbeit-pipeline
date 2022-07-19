@@ -17,10 +17,10 @@ from alerting.alert import Alert
 
 class Typing(Stage, IObservable):
     def __init__(self, successor: 'Stage'):
+        self.successor = successor
         self.root = RootNode(datetime.now())
         self.init_core()
         self._observers = []
-        super().__init__(successor)
 
     def init_core(self):
         here = os.path.dirname(os.path.abspath(__file__))

@@ -17,6 +17,7 @@ class FilterPluginInterface:
 
 class RequestFilter(Stage, IObservable):
     def __init__(self, successor: 'Stage'):
+        self.successor = successor
         if len(os.listdir('./stages/filter/plugins')) == 0:
             sys.exit("No filter plugin detcted. Please place default filter plugin in the filter plugis directory.")
         sys.path.append('./stages/filter/plugins')
@@ -25,7 +26,6 @@ class RequestFilter(Stage, IObservable):
             for f in next(os.walk('stages/filter/plugins'))[2]
         ]
         self._observers = []
-        super().__init__(successor)
 
     def run(self, dto: DTO) -> None:
         if not isinstance(dto, AcquisitionFilterDTO):
