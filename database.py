@@ -3,6 +3,13 @@ import transaction
 import copy
 
 class Database():
+    """
+    This class is used to handle all the database connections from the application to the ZODB and therefore prevent locking problems.
+
+    Attributes
+    ----------
+    
+    """
     def __init__(self):
         storage = ZODB.FileStorage.FileStorage('db.fs')
         self.db = ZODB.DB(storage)
