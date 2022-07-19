@@ -52,7 +52,7 @@ class Model(Stage, IObservable):
             if ml_model_result[0] > 0:
                 print("Attack")
                 # Create an Alert
-                alert = Alert(msg=f"Attack detected whit accuracy({ml_model_result[1]})")
+                alert = Alert(msg=f"Attack detected with accuracy({ml_model_result[1]})")
                 self.notify(alert)
                 return
             # define plugin iteration here

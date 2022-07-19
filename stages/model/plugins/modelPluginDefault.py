@@ -13,7 +13,7 @@ class Plugin(ModelPluginInterface):
     """ This plugin uses Logistic Regression to detect attacks"""
 
     def __init__(self):
-        """Initial method whit basic attributes"""
+        """Initial method with basic attributes"""
         # Dict to save the trained models for the Fabric pattern
         self.model_dict = {}
         # List of keys which refers to a quantitative feature
@@ -78,7 +78,7 @@ class LogisticRegressionClass:
     """This Class contains a Logistic Regression Model for a specific type"""
 
     def __init__(self):
-        """Initial method whit basic attributes"""
+        """Initial method with basic attributes"""
         # Empty ML-Model
         self.model = Pipeline([('scaler', StandardScaler()), ('lr', LogisticRegression(random_state=0))])
         # Set initial accuracy to zero
