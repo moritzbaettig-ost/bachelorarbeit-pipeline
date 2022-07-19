@@ -131,9 +131,18 @@ class Plugin(ExtractionPluginInterface):
                 if key in current_query_hexagram_pool:
                     occurrence_hexagrams = occurrence_hexagrams + dictRequest['query_hexagrams'][key]
 
-            dictRequest['query_monograms'] = float(occurrence_monograms)/float(sum(dictRequest['query_monograms'].values()))
-            dictRequest['query_bigrams'] = float(occurrence_bigrams)/float(sum(dictRequest['query_bigrams'].values()))
-            dictRequest['query_hexagrams'] = float(occurrence_hexagrams)/float(sum(dictRequest['query_hexagrams'].values()))
+            if float(sum(dictRequest['query_monograms'].values()))>0:
+                dictRequest['query_monograms'] = float(occurrence_monograms)/float(sum(dictRequest['query_monograms'].values()))
+            else:
+                dictRequest['query_monograms'] = 0.0
+            if float(sum(dictRequest['query_bigrams'].values()))>0:
+                dictRequest['query_bigrams'] = float(occurrence_bigrams)/float(sum(dictRequest['query_bigrams'].values()))
+            else:
+                dictRequest['query_bigrams'] = 0.0
+            if float(sum(dictRequest['query_hexagrams'].values()))>0:
+                dictRequest['query_hexagrams'] = float(occurrence_hexagrams)/float(sum(dictRequest['query_hexagrams'].values()))
+            else:
+                dictRequest['query_hexagrams'] = 0.0
 
         # Body
         if type.has_body:
@@ -241,9 +250,18 @@ class Plugin(ExtractionPluginInterface):
                 if key in current_body_hexagram_pool:
                     occurrence_hexagrams = occurrence_hexagrams + dictRequest['body_hexagrams'][key]
 
-            dictRequest['body_monograms'] = float(occurrence_monograms)/float(sum(dictRequest['body_monograms'].values()))
-            dictRequest['body_bigrams'] = float(occurrence_bigrams)/float(sum(dictRequest['body_bigrams'].values()))
-            dictRequest['body_hexagrams'] = float(occurrence_hexagrams)/float(sum(dictRequest['body_hexagrams'].values()))
+            if float(sum(dictRequest['body_monograms'].values()))>0:
+                dictRequest['body_monograms'] = float(occurrence_monograms)/float(sum(dictRequest['body_monograms'].values()))
+            else:
+                dictRequest['body_monograms'] = 0.0
+            if float(sum(dictRequest['body_bigrams'].values()))>0:
+                dictRequest['body_bigrams'] = float(occurrence_bigrams)/float(sum(dictRequest['body_bigrams'].values()))
+            else:
+                dictRequest['body_bigrams'] = 0.0
+            if float(sum(dictRequest['body_hexagrams'].values()))>0:
+                dictRequest['body_hexagrams'] = float(occurrence_hexagrams)/float(sum(dictRequest['body_hexagrams'].values()))
+            else:
+                dictRequest['body_hexagrams'] = 0.0
 
         return dictRequest
 
