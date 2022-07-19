@@ -37,7 +37,7 @@ class Database():
         self.wait = True
         connection = self.db.open()
         root = connection.root()
-        root[name] = obj
+        root[name] = copy.deepcopy(obj)
         transaction.commit()
         connection.close()
         self.wait = False
