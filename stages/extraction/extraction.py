@@ -9,7 +9,6 @@ import os
 import importlib
 from datetime import datetime
 from database import DatabaseHandler
-import threading
 
 
 class ExtractionPluginInterface:
@@ -120,8 +119,7 @@ class Extraction(Stage):
             
             db_data = self.db_handler.get_object("data")
             db_data.append(data)
-            thread = threading.Thread(target=self.db_handler.write_object, args=("data", db_data))
-            thread.start()
+            self.db_handler.write_object("data", db_data)
 
         new_dto = ExtractionModelDTO(features=features, type=dto.type)
         self.successor.run(new_dto)
