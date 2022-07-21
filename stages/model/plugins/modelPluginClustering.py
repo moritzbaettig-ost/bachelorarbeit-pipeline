@@ -66,7 +66,7 @@ class Plugin(ModelPluginInterface):
         return self.model_dict[type]
 
 
-  def set_model(self, db_handler: DatabaseHandler) -> None:
+    def set_model(self, db_handler: DatabaseHandler) -> None:
         """
         This model initialises the factory pattern
 
