@@ -1,6 +1,5 @@
 import sys
 from alerting.alert import Alerting
-from stages import Stage
 from stages.acquisition import Acquisition
 from stages.extraction import Extraction
 from stages.filter import RequestFilter
@@ -11,6 +10,16 @@ from database import DatabaseHandler
 
 
 class Pipeline:
+    """
+    This class represents the Inversion of Control Container of the Pipeline structure.
+    It creates all instances of the stages and passes all the references.
+
+    Methods
+    ----------
+    init_pipeline()
+        Initializes the pipeline. This method is called on startup.
+    """
+
     def init_pipeline(self):
         print("Initializing Pipeline")
         parser = argparse.ArgumentParser()
