@@ -2,7 +2,7 @@ import ZODB, ZODB.FileStorage
 import transaction
 import copy
 
-class Database():
+class DatabaseHandler:
     """
     This class is used to handle all the database connections from the application to the ZODB and therefore prevent locking problems.
 

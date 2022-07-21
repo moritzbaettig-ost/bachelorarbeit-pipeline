@@ -6,11 +6,11 @@ from sklearn.feature_extraction.text import CountVectorizer
 from collections import Counter
 from datetime import datetime
 import threading
-from database import Database
+from database import DatabaseHandler
 
 
 class Plugin(ExtractionPluginInterface):
-    def extract_features(self, message: IDSHTTPMessage, type: Type, mode: str, db_handler: Database) -> Dict:
+    def extract_features(self, message: IDSHTTPMessage, type: Type, mode: str, db_handler: DatabaseHandler) -> Dict:
         dictRequest = {}
         # Basic information
         dictRequest['source_address'] = message.source_address

@@ -9,7 +9,7 @@ import os
 import importlib
 from collections import Counter
 from datetime import datetime
-from database import Database
+from database import DatabaseHandler
 import threading
 
 
@@ -19,7 +19,7 @@ class ExtractionPluginInterface:
 
 
 class Extraction(Stage):
-    def __init__(self, successor: 'Stage', mode: str, logging: bool, db_handler: Database):
+    def __init__(self, successor: 'Stage', mode: str, logging: bool, db_handler: DatabaseHandler):
         self.successor = successor
         if len(os.listdir('./stages/extraction/plugins')) == 0:
             sys.exit("No extraction plugin detected. Please place default extraction plugin in the extraction plugin directory.")

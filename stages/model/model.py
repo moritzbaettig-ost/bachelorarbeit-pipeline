@@ -1,6 +1,6 @@
 from alerting.IObservable import IObservable
 from alerting.IObserver import IObserver
-from database import Database
+from database import DatabaseHandler
 from stages import Stage
 from dtos import DTO, ExtractionModelDTO
 from alerting.alert import Alert
@@ -20,7 +20,7 @@ class ModelPluginInterface:
 
 
 class Model(Stage, IObservable):
-    def __init__(self, successor: 'Stage', mode: str, db_handler: Database):
+    def __init__(self, successor: 'Stage', mode: str, db_handler: DatabaseHandler):
         self.successor = successor
         if len(os.listdir('./stages/model/plugins')) == 0:
             sys.exit("No model plugin detected. Please place default model plugin in the model plugin directory.")
