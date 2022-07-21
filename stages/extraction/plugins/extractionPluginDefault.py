@@ -10,7 +10,34 @@ from database import DatabaseHandler
 
 
 class Plugin(ExtractionPluginInterface):
+    """
+    This class represents a plugin for the extraction stage that implements the default feature extraction.
+
+    Methods
+    ----------
+    extract_features(message, type, mode, db_handler)
+        This method extracts and returns the features for the following ML-algorithm based on the type.
+    get_ngram_dict(n, data)
+        This method calculates the n-gram for a specific string.
+    """
+
     def extract_features(self, message: IDSHTTPMessage, type: Type, mode: str, db_handler: DatabaseHandler) -> Dict:
+        """
+        This method extracts and returns the features for the following ML-algorithm based on the type.
+
+        Parameters
+        ----------
+        message: IDSHTTPMessage
+            The HTTP message from which the features should be extracted.
+        type: Type
+            The type of the HTTP message.
+
+        Returns
+        ----------
+        list
+            The list of the extracted features.
+        """
+
         dictRequest = {}
         # Basic information
         dictRequest['source_address'] = message.source_address
@@ -265,7 +292,24 @@ class Plugin(ExtractionPluginInterface):
 
         return dictRequest
 
+
     def get_ngram_dict(self, n, data) -> dict:
+        """
+        This method calculates the n-gram for a specific string.
+
+        Parameters
+        ----------
+        n: int
+            The type of the n-gram (monogram, bigram, ...)
+        data: str
+            The string to be analyzed
+
+        Returns
+        ----------
+        dict
+            The dictionary with the n-grams as keys and the occurance as values.
+        """
+        
         # Check if data can be vectorized
         if n <= len(data):
             vectorizer = CountVectorizer(ngram_range=(n, n), analyzer='char')

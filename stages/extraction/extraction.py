@@ -1,5 +1,5 @@
 from time import sleep
-from typing import List
+from typing import Dict
 from message import IDSHTTPMessage
 from stages import Stage
 from dtos import DTO, TypingExtractionDTO, ExtractionModelDTO
@@ -22,7 +22,7 @@ class ExtractionPluginInterface:
         Extracts and returns the features for the following ML-algorithm based on the type.
     """
 
-    def extract_features(self, message: IDSHTTPMessage, type: Type) -> List:
+    def extract_features(self, message: IDSHTTPMessage, type: Type) -> Dict:
         """
         This method extracts and returns the features for the following ML-algorithm based on the type.
 
