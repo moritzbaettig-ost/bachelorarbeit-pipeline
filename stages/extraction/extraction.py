@@ -94,7 +94,7 @@ class Extraction(Stage):
         """
         The method that gets called by the previous stage.
 
-        Parameters:
+        Parameters
         ----------
         dto: DTO
             The data transfer object that is received from the previous stage.
