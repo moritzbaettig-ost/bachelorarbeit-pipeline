@@ -40,7 +40,7 @@ class FilterPluginInterface:
 
 class RequestFilter(Stage, IObservable):
     """
-    This class represents the third stage of the ML-IDS pipeline.
+    This class represents the second stage of the ML-IDS pipeline.
     This stage decides if an HTTP request should be filtered or not.
 
     Attributes
