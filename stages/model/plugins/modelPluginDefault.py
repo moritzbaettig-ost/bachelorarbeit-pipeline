@@ -3,7 +3,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from database import Database
+from database import DatabaseHandler
 import pandas as pd
 import threading
 from type import Type
@@ -66,13 +66,14 @@ class Plugin(ModelPluginInterface):
         # Return the requested Instance
         return self.model_dict[type]
 
-    def set_model(self, db_handler: Database) -> None:
+
+    def set_model(self, db_handler: DatabaseHandler) -> None:
         """
         This model initialises the Factory method
 
         Parameters
         ----------
-        db_handler: Database
+        db_handler: DatabaseHandler
             This variable contains the connection to the database handling class
         """
 
@@ -84,15 +85,17 @@ class Plugin(ModelPluginInterface):
             if len(model_dict) > 0:
                 self.model_dict = model_dict
 
-    def train_model(self, type: Type, db_handler: Database) -> None:
+
+    def train_model(self, type: Type, db_handler: DatabaseHandler) -> None:
         """
         This method reads the required features from the database and trains the Logistic Regression Model
 
         Parameters
         ----------
-        db_handler: Database
+        db_handler: DatabaseHandler
             This variable contains the connection to the database handling class
         """
+
         db_data = db_handler.get_object("data")
         print("Train_Model")
         db_data_actual_type = []

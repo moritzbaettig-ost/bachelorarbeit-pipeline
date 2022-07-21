@@ -1,6 +1,6 @@
 from alerting.IObservable import IObservable
 from alerting.IObserver import IObserver
-from database import Database
+from database import DatabaseHandler
 from stages import Stage
 from dtos import DTO, ExtractionModelDTO
 from alerting.alert import Alert
@@ -62,7 +62,7 @@ class Model(Stage, IObservable):
         The stage that follows this stage in the pipeline.
     plugins: list
         Is a list of all available plugins from the type ModelPluginInterface
-    db_handler: Database
+    db_handler: DatabaseHandler
         This variable contains the connection to the database handling class
     mode: str
         This string contains if the pipeline is started in training or test mode
@@ -80,7 +80,8 @@ class Model(Stage, IObservable):
     notify(alert)
         Notify all observers about an alert.
     """
-    def __init__(self, successor: 'Stage', mode: str, db_handler: Database):
+    
+    def __init__(self, successor: 'Stage', mode: str, db_handler: DatabaseHandler):
         """
         Parameters
         ----------
@@ -88,7 +89,7 @@ class Model(Stage, IObservable):
             The stage that follows this stage in the pipeline.
         mode: str
             This string contains if the pipeline is started in training or test mode
-        db_handler: Database
+        db_handler: DatabaseHandler
             This variable contains the connection to the database handling class
         """
 

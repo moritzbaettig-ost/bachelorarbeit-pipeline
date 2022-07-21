@@ -2,6 +2,22 @@ from dataclasses import dataclass
 
 @dataclass
 class Type:
+    """
+    This class is used to represent a HTTP request type.
+    The type is needed for classification in the extraction and model stage.
+
+    Attributes
+    ----------
+    method: str
+        The HTTP method of the request (GET, POST, ...)
+    path: str
+        The path on which a request is made
+    has_query: bool
+        States if the request has a path query
+    has_body: bool
+        States if the request has a body
+    """
+    
     method: str
     path: str
     has_query: bool

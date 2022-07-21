@@ -2,7 +2,7 @@ from sklearn.cluster import KMeans
 from stages.model import ModelPluginInterface
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
-from database import Database
+from database import DatabaseHandler
 import pandas as pd
 import threading
 from type import Type
@@ -65,15 +65,17 @@ class Plugin(ModelPluginInterface):
         # Return the requested Instance
         return self.model_dict[type]
 
-    def set_model(self, db_handler: Database) -> None:
+
+  def set_model(self, db_handler: DatabaseHandler) -> None:
         """
         This model initialises the factory pattern
 
         Parameters
         ----------
-        db_handler: Database
+        db_handler: DatabaseHandler
             This variable contains the connection to the database handling class
         """
+        
         # Read available Factory from the database
         model_dict = db_handler.get_object("kMeans_model_dict")
         # Check if a Factory dict was available in the database
@@ -82,15 +84,17 @@ class Plugin(ModelPluginInterface):
             if len(model_dict) > 0:
                 self.model_dict = model_dict
 
-    def train_model(self, type: Type, db_handler: Database) -> None:
+
+    def train_model(self, type: Type, db_handler: DatabaseHandler) -> None:
         """
         This method reads the required features from the database and trains the Logistic Regression Model
 
         Parameters
         ----------
-        db_handler: Database
+        db_handler: DatabaseHandler
             This variable contains the connection to the database handling class
         """
+
         db_data = db_handler.get_object("data")
         db_data_actual_type = []
         count_attack = 0
@@ -130,6 +134,7 @@ class Plugin(ModelPluginInterface):
         list
             Returns a list of the pattern [attack (1)/no attack(0), probability of the attack]
         """
+        
         dict_quant_features = [{item: predicting_data.get(item) for item in self.quant_keys}]
         return self.get_model(type).predict(dict_quant_features)
 
