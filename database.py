@@ -1,6 +1,7 @@
 import ZODB, ZODB.FileStorage
 import transaction
 import copy
+import threading, queue
 
 class DatabaseHandler:
     """
@@ -10,6 +11,10 @@ class DatabaseHandler:
     ----------
     db : DB
         The database object that represents the ZODB.
+    queue: Queue
+        The queue that handles the writes for the DB with de FIFO principle.
+    maintenance_mode: bool
+        If true, the queue is interrupted and waits until the maintenance is over.
 
     Methods
     ----------
@@ -21,12 +26,16 @@ class DatabaseHandler:
         Checks if the namespace exists in the database.
     print_root()
         Prints the contents of the database tree.
+    _write_worker()
+        Defines the worker function for the DB write daemon thread.
     """
 
     def __init__(self):
         storage = ZODB.FileStorage.FileStorage('db.fs')
         self.db = ZODB.DB(storage)
-        self.wait = False
+        self.queue = queue.Queue()
+        self.maintenance_mode = False
+        threading.Thread(target=self._write_worker, daemon=True).start()
         if not self.if_exists("body_ngrams"):
             self.write_object("body_ngrams", {})
         if not self.if_exists("query_ngrams"):
@@ -50,9 +59,6 @@ class DatabaseHandler:
             The object.
         """
 
-        while self.wait:
-            pass
-        self.wait = True
         connection = self.db.open()
         root = connection.root()
         # Check if object exists in root namespace
@@ -63,7 +69,6 @@ class DatabaseHandler:
             # Return False if the object does not exist in the database
             obj = False
         connection.close()
-        self.wait = False
         return obj
 
 
@@ -79,15 +84,8 @@ class DatabaseHandler:
             The object that has to be stored.
         """
 
-        while self.wait:
-            pass
-        self.wait = True
-        connection = self.db.open()
-        root = connection.root()
-        root[name] = copy.deepcopy(obj)
-        transaction.commit()
-        connection.close()
-        self.wait = False
+        item = (name, obj)
+        self.queue.put(item)
 
 
     def if_exists(self, name):
@@ -105,14 +103,10 @@ class DatabaseHandler:
             Boolean if it exists or not.
         """
 
-        while self.wait:
-            pass
-        self.wait = True
         connection = self.db.open()
         root = connection.root()
         res = name in root
         connection.close()
-        self.wait = False
         return res
 
 
@@ -121,11 +115,25 @@ class DatabaseHandler:
         Prints the contents of the database tree.
         """
         
-        while self.wait:
-            pass
-        self.wait = True
         connection = self.db.open()
         root = connection.root()
         print(root.items())
         connection.close()
-        self.wait = False
+
+
+    def _write_worker(self) -> None:
+        """
+        Defines the worker function for the DB write daemon thread.
+        """
+
+        while True:
+            if not self.maintenance_mode:
+                item = self.queue.get()
+                name = item[0]
+                obj = item[1]
+                connection = self.db.open()
+                root = connection.root()
+                root[name] = copy.deepcopy(obj)
+                transaction.commit()
+                connection.close()
+                self.queue.task_done()

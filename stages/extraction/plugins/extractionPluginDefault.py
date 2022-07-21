@@ -5,7 +5,6 @@ from type import Type
 from sklearn.feature_extraction.text import CountVectorizer
 from collections import Counter
 from datetime import datetime
-import threading
 from database import DatabaseHandler
 
 
@@ -113,8 +112,7 @@ class Plugin(ExtractionPluginInterface):
 
             if mode == "train":
                 # Add the query n-gram information to the database for future calculations
-                thread = threading.Thread(target=db_handler.write_object, args=("query_ngrams", db_query_ngrams))
-                thread.start()
+                db_handler.write_object("query_ngrams", db_query_ngrams)
 
             factor_monograms = 1.0/sum(current_query_monogram_pool.values())
             factor_bigrams = 1.0/sum(current_query_bigram_pool.values())
@@ -232,8 +230,7 @@ class Plugin(ExtractionPluginInterface):
 
             if mode == "train":
                 # Add the body n-gram information to the database for future calculations
-                thread = threading.Thread(target=db_handler.write_object, args=("body_ngrams", db_body_ngrams))
-                thread.start()
+                db_handler.write_object("body_ngrams", db_body_ngrams)
 
             factor_monograms = 1.0/sum(current_body_monogram_pool.values())
             factor_bigrams = 1.0/sum(current_body_bigram_pool.values())

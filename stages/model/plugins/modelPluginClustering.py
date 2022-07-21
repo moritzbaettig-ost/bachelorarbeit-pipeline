@@ -4,7 +4,6 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 from database import DatabaseHandler
 import pandas as pd
-import threading
 from type import Type
 
 
@@ -114,8 +113,7 @@ class Plugin(ModelPluginInterface):
                 training_data.append({item: d['features'].get(item) for item in self.quant_keys})
             training_labels = [d['label'] for d in db_data_actual_type]
             self.get_model(type).train_model(training_data, training_labels)
-            thread = threading.Thread(target=db_handler.write_object, args=("kMeans_model_dict", self.model_dict))
-            thread.start()
+            db_handler.write_object("kMeans_model_dict", self.model_dict)
         else:
             print("Not enough Data available for " + type.path)
 
