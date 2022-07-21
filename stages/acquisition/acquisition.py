@@ -22,7 +22,7 @@ class Acquisition(Stage):
 
     Methods
     ----------
-    run(successor, hostname)
+    run(dto)
         The method that gets called by the previous stage.
     """
 
