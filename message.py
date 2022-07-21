@@ -4,6 +4,27 @@ from http.client import HTTPMessage
 
 @dataclass
 class IDSHTTPMessage:
+    """
+    This class represents a HTTP message that is passed inside of the IDS-Pipeline.
+
+    Attributes
+    ----------
+    source_address: str
+        The source IP-address of the HTTP request.
+    method: str
+        The HTTP method that is used (GET, POST, ...)
+    path: str
+        The path on which the request is made
+    query: str
+        The query included in the request URL
+    protocol_version: str
+        The HTTP protocol version used
+    header: HTTPMessage
+        The HTTP headers
+    body: str
+        The HTTP body
+    """
+    
     source_address: str
     method: str
     path: str
