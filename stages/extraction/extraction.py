@@ -84,7 +84,7 @@ class Extraction(Stage):
             sys.exit("No extraction plugin detected. Please place default extraction plugin in the extraction plugin directory.")
         sys.path.append('./stages/extraction/plugins')
         self.plugins = [
-            importlib.import_module(f.split('.')[0], '.').Plugin()
+            importlib.import_module(f.split('.')[0], '.').Plugin(db_handler)
             for f in next(os.walk('stages/extraction/plugins'))[2]
         ]
         self.mode = mode

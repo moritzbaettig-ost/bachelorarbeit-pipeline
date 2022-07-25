@@ -5,7 +5,132 @@ from type import Type
 from sklearn.feature_extraction.text import CountVectorizer
 from collections import Counter
 from datetime import datetime
-from database import DatabaseHandler
+from database import DatabaseHandler, DatabaseHandlerStrategy
+from BTrees.OOBTree import BTree
+import transaction
+import persistent.list
+
+
+class ExtractionPluginDefaultStrategy(DatabaseHandlerStrategy):
+    def __init__(self, db_handler: DatabaseHandler) -> None:
+        connection = db_handler.db.open()
+        root = connection.root()
+        if not "body_ngrams" in root:
+            root["body_ngrams"] = BTree()
+        if not "query_ngrams" in root:
+            root["query_ngrams"] = BTree()
+        if not "data" in root:
+            root["data"] = BTree()
+        transaction.commit()
+        connection.close()
+
+
+    def write(self, name: str, data: object) -> None:
+        #TODO
+        pass
+
+
+    def read(self, name: str) -> object:
+        #TODO
+        pass
+
+
+    def get_query_ngrams(self, type: Type) -> dict:
+        """
+        Returns the query ngram pool of a specific type.
+
+        Parameters
+        ----------
+        type: Type
+            The HTTP message type
+        
+        Returns
+        ----------
+        dict
+            The dictionary with the query ngram pool
+        """
+
+        connection = self.db.open()
+        root = connection.root()
+        if not root["query_ngrams"].has_key(type):
+            root["query_ngrams"].insert(type, {
+                    "monograms": persistent.list.PersistentList(),
+                    "bigrams": persistent.list.PersistentList(),
+                    "hexagrams": persistent.list.PersistentList()
+                })
+            transaction.commit()
+        res =  {
+            "monograms": list(root["query_ngrams"][type]["monograms"]),
+            "bigrams": list(root["query_ngrams"][type]["bigrams"]),
+            "hexagrams": list(root["query_ngrams"][type]["hexagrams"])
+        }
+        connection.close()
+        return res
+
+
+    def get_body_ngrams(self, type: Type) -> dict:
+        """
+        Returns the body ngram pool of a specific type.
+
+        Parameters
+        ----------
+        type: Type
+            The HTTP message type
+        
+        Returns
+        ----------
+        dict
+            The dictionary with the body ngram pool
+        """
+
+        connection = self.db.open()
+        root = connection.root()
+        if not root["body_ngrams"].has_key(type):
+            root["body_ngrams"].insert(type, {
+                    "monograms": persistent.list.PersistentList(),
+                    "bigrams": persistent.list.PersistentList(),
+                    "hexagrams": persistent.list.PersistentList()
+                })
+            transaction.commit()
+        res =  {
+            "monograms": list(root["body_ngrams"][type]["monograms"]),
+            "bigrams": list(root["body_ngrams"][type]["bigrams"]),
+            "hexagrams": list(root["body_ngrams"][type]["hexagrams"])
+        }
+        connection.close()
+        return res
+
+
+    def write_query_ngrams(self, type: Type, ngrams: dict) -> None:
+        """
+        Appends a set of newly calculated query ngrams to the databse.
+
+        Parameters
+        ----------
+        type: Type
+            The HTTP message type
+        ngrams: dict
+            The ngrams dictionary
+        """
+
+        item = ("query_ngrams", ngrams, type)
+        self.queue.put(item)
+
+
+    def write_body_ngrams(self, type: Type, ngrams: dict) -> None:
+        """
+        Appends a set of newly calculated body ngrams to the databse.
+
+        Parameters
+        ----------
+        type: Type
+            The HTTP message type
+        ngrams: dict
+            The ngrams dictionary
+        """
+
+        item = ("body_ngrams", ngrams, type)
+        self.queue.put(item)
 
 
 class Plugin(ExtractionPluginInterface):
@@ -19,6 +144,11 @@ class Plugin(ExtractionPluginInterface):
     get_ngram_dict(n, data)
         This method calculates the n-gram for a specific string.
     """
+
+    def __init__(self, db_handler: DatabaseHandler) -> None:
+        strategy = ExtractionPluginDefaultStrategy(db_handler)
+        db_handler.set_strategy(strategy)
+
 
     def extract_features(self, message: IDSHTTPMessage, type: Type, mode: str, db_handler: DatabaseHandler) -> Dict:
         """

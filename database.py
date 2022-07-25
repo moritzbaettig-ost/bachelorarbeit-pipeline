@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import ZODB, ZODB.FileStorage
 import transaction
 import copy
@@ -6,6 +7,63 @@ from BTrees.OOBTree import BTree
 from datetime import datetime
 from type import Type
 import persistent.list
+
+
+class DatabaseHandlerStrategy(ABC):
+    @abstractmethod
+    def write(self, name: str, data: object) -> None:
+        pass
+
+    
+    @abstractmethod
+    def read(self, name: str) -> object:
+        pass
+
+
+    @abstractmethod
+    def _write_worker(self) -> None:
+        pass
+
+
+class DefaultStrategy(DatabaseHandlerStrategy):
+    def __init__(self) -> None:
+        self.queue = queue.Queue()
+        self.maintenance_mode = False
+        threading.Thread(target=self._write_worker, daemon=True).start()
+
+
+    def write(self, name: str, data: object) -> None:
+        item = (name, data)
+        self.queue.put(item)
+
+
+    def read(self, name: str) -> object:
+        connection = self.db.open()
+        root = connection.root()
+        # Check if object exists in root namespace
+        if name in root:
+            # Copy the object from the database
+            obj = copy.deepcopy(root[name])
+        else:
+            # Return False if the object does not exist in the database
+            obj = False
+        connection.close()
+        return obj
+
+
+    def _write_worker(self) -> None:
+        while True:
+            if not self.maintenance_mode:
+                item = self.queue.get()
+                name = item[0]
+                obj = item[1]
+                connection = self.db.open()
+                root = connection.root()
+                root[name] = copy.deepcopy(obj)
+                transaction.commit()
+                connection.close()
+                self.queue.task_done()
+
 
 class DatabaseHandler:
     """
@@ -49,23 +107,14 @@ class DatabaseHandler:
     def __init__(self):
         storage = ZODB.FileStorage.FileStorage('db.fs')
         self.db = ZODB.DB(storage)
-        self.queue = queue.Queue()
-        self.maintenance_mode = False
-        threading.Thread(target=self._write_worker, daemon=True).start()
-
-        connection = self.db.open()
-        root = connection.root()
-        if not "body_ngrams" in root:
-            root["body_ngrams"] = BTree()
-        if not "query_ngrams" in root:
-            root["query_ngrams"] = BTree()
-        if not "data" in root:
-            root["data"] = BTree()
-        transaction.commit()
-        connection.close()
+        self._strategy = DefaultStrategy()
 
 
-    def get_object(self, name):
+    def set_strategy(self, strategy: DatabaseHandlerStrategy) -> None:
+        self._strategy = strategy
+
+
+    def read(self, name: str) -> object:
         """
         Reads an object from the database that is stored under a specific namespace and returns it.
 
@@ -80,19 +129,10 @@ class DatabaseHandler:
             The object.
         """
 
-        connection = self.db.open()
-        root = connection.root()
-        # Check if object exists in root namespace
-        if name in root:
-            # Copy the object from the database
-            obj = copy.deepcopy(root[name])
-        else:
-            # Return False if the object does not exist in the database
-            obj = False
-        connection.close()
-        return obj
+        return self._strategy.read(name)
 
 
+    # TODO: Move in Model Strategy
     def get_data(self) -> dict:
         """
         Returns the ML training data from the databse.
@@ -110,73 +150,7 @@ class DatabaseHandler:
         return res
 
 
-    def get_query_ngrams(self, type: Type) -> dict:
-        """
-        Returns the query ngram pool of a specific type.
-
-        Parameters
-        ----------
-        type: Type
-            The HTTP message type
-        
-        Returns
-        ----------
-        dict
-            The dictionary with the query ngram pool
-        """
-
-        connection = self.db.open()
-        root = connection.root()
-        if not root["query_ngrams"].has_key(type):
-            root["query_ngrams"].insert(type, {
-                    "monograms": persistent.list.PersistentList(),
-                    "bigrams": persistent.list.PersistentList(),
-                    "hexagrams": persistent.list.PersistentList()
-                })
-            transaction.commit()
-        res =  {
-            "monograms": list(root["query_ngrams"][type]["monograms"]),
-            "bigrams": list(root["query_ngrams"][type]["bigrams"]),
-            "hexagrams": list(root["query_ngrams"][type]["hexagrams"])
-        }
-        connection.close()
-        return res
-
-
-    def get_body_ngrams(self, type: Type) -> dict:
-        """
-        Returns the body ngram pool of a specific type.
-
-        Parameters
-        ----------
-        type: Type
-            The HTTP message type
-        
-        Returns
-        ----------
-        dict
-            The dictionary with the body ngram pool
-        """
-
-        connection = self.db.open()
-        root = connection.root()
-        if not root["body_ngrams"].has_key(type):
-            root["body_ngrams"].insert(type, {
-                    "monograms": persistent.list.PersistentList(),
-                    "bigrams": persistent.list.PersistentList(),
-                    "hexagrams": persistent.list.PersistentList()
-                })
-            transaction.commit()
-        res =  {
-            "monograms": list(root["body_ngrams"][type]["monograms"]),
-            "bigrams": list(root["body_ngrams"][type]["bigrams"]),
-            "hexagrams": list(root["body_ngrams"][type]["hexagrams"])
-        }
-        connection.close()
-        return res
-
-
-    def write_object(self, name, obj):
+    def write_object(self, name: str, data: object) -> None:
         """
         Writes an object to the database under a specific namespace.     
         Parameters
@@ -187,10 +161,10 @@ class DatabaseHandler:
             The object that has to be stored.
         """
 
-        item = (name, obj, None)
-        self.queue.put(item)
+        self._strategy.write(name, data)
 
 
+    # TODO: Move in Model Strategy
     def write_data(self, obj: dict) -> None:
         """
         Appends a new dataset for the ML training to the database.
@@ -205,38 +179,6 @@ class DatabaseHandler:
         self.queue.put(item)
 
 
-    def write_query_ngrams(self, type: Type, ngrams: dict) -> None:
-        """
-        Appends a set of newly calculated query ngrams to the databse.
-
-        Parameters
-        ----------
-        type: Type
-            The HTTP message type
-        ngrams: dict
-            The ngrams dictionary
-        """
-
-        item = ("query_ngrams", ngrams, type)
-        self.queue.put(item)
-
-
-    def write_body_ngrams(self, type: Type, ngrams: dict) -> None:
-        """
-        Appends a set of newly calculated body ngrams to the databse.
-
-        Parameters
-        ----------
-        type: Type
-            The HTTP message type
-        ngrams: dict
-            The ngrams dictionary
-        """
-
-        item = ("body_ngrams", ngrams, type)
-        self.queue.put(item)
-
-
     def print_root(self) -> None:
         """
         Prints the contents of the database tree.
@@ -248,6 +190,7 @@ class DatabaseHandler:
         connection.close()
 
 
+    #TODO
     def _write_worker(self) -> None:
         """
         Defines the worker function for the DB write daemon thread.
