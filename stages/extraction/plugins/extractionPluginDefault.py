@@ -30,6 +30,10 @@ class Plugin(ExtractionPluginInterface):
             The HTTP message from which the features should be extracted.
         type: Type
             The type of the HTTP message.
+        mode: str
+            The mode of the pipeline.
+        db_handler: DatabaseHandler
+            The database handler.
 
         Returns
         ----------
@@ -85,34 +89,31 @@ class Plugin(ExtractionPluginInterface):
             counter_query_bigrams = Counter(dictRequest['query_bigrams'])
             counter_query_hexagrams = Counter(dictRequest['query_hexagrams'])
 
-            db_query_ngrams = db_handler.get_object("query_ngrams")
+            db_query_ngrams = db_handler.get_query_ngrams(type)
+            if mode == "train":
+                # Add the query n-gram information to the database for future calculations
+                db_handler.write_query_ngrams(type, {
+                    "monograms": (datetime.now(), counter_query_monograms),
+                    "bigrams": (datetime.now(), counter_query_bigrams),
+                    "hexagrams": (datetime.now(), counter_query_hexagrams)
+                })
 
-            if not type in db_query_ngrams:
-                db_query_ngrams[type] = {
-                    "monograms": [],
-                    "bigrams": [],
-                    "hexagrams": []
-                }
-            db_query_ngrams[type]["monograms"].append((datetime.now(), counter_query_monograms))
-            db_query_ngrams[type]["bigrams"].append((datetime.now(), counter_query_bigrams))
-            db_query_ngrams[type]["hexagrams"].append((datetime.now(), counter_query_hexagrams))
+            db_query_ngrams["monograms"].append((datetime.now(), counter_query_monograms))
+            db_query_ngrams["bigrams"].append((datetime.now(), counter_query_bigrams))
+            db_query_ngrams["hexagrams"].append((datetime.now(), counter_query_hexagrams))
 
             current_query_monogram_pool_counter = Counter()
-            for t in db_query_ngrams[type]["monograms"]:
+            for t in db_query_ngrams["monograms"]:
                 current_query_monogram_pool_counter = current_query_monogram_pool_counter + t[1]
             current_query_monogram_pool = dict(current_query_monogram_pool_counter)
             current_query_bigram_pool_counter = Counter()
-            for t in db_query_ngrams[type]["bigrams"]:
+            for t in db_query_ngrams["bigrams"]:
                 current_query_bigram_pool_counter = current_query_bigram_pool_counter + t[1]
             current_query_bigram_pool = dict(current_query_bigram_pool_counter)
             current_query_hexagram_pool_counter = Counter()
-            for t in db_query_ngrams[type]["hexagrams"]:
+            for t in db_query_ngrams["hexagrams"]:
                 current_query_hexagram_pool_counter = current_query_hexagram_pool_counter + t[1]
             current_query_hexagram_pool = dict(current_query_hexagram_pool_counter)
-
-            if mode == "train":
-                # Add the query n-gram information to the database for future calculations
-                db_handler.write_object("query_ngrams", db_query_ngrams)
 
             factor_monograms = 1.0/sum(current_query_monogram_pool.values())
             factor_bigrams = 1.0/sum(current_query_bigram_pool.values())
@@ -203,34 +204,31 @@ class Plugin(ExtractionPluginInterface):
             counter_body_bigrams = Counter(dictRequest['body_bigrams'])
             counter_body_hexagrams = Counter(dictRequest['body_hexagrams'])
 
-            db_body_ngrams = db_handler.get_object("body_ngrams")
+            db_body_ngrams = db_handler.get_body_ngrams(type)
+            if mode == "train":
+                # Add the body n-gram information to the database for future calculations
+                db_handler.write_body_ngrams(type, {
+                    "monograms": (datetime.now(), counter_body_monograms),
+                    "bigrams": (datetime.now(), counter_body_bigrams),
+                    "hexagrams": (datetime.now(), counter_body_hexagrams)
+                })
 
-            if not type in db_body_ngrams:
-                db_body_ngrams[type] = {
-                    "monograms": [],
-                    "bigrams": [],
-                    "hexagrams": []
-                }
-            db_body_ngrams[type]["monograms"].append((datetime.now(), counter_body_monograms))
-            db_body_ngrams[type]["bigrams"].append((datetime.now(), counter_body_bigrams))
-            db_body_ngrams[type]["hexagrams"].append((datetime.now(), counter_body_hexagrams))
+            db_body_ngrams["monograms"].append((datetime.now(), counter_body_monograms))
+            db_body_ngrams["bigrams"].append((datetime.now(), counter_body_bigrams))
+            db_body_ngrams["hexagrams"].append((datetime.now(), counter_body_hexagrams))
 
             current_body_monogram_pool_counter = Counter()
-            for t in db_body_ngrams[type]["monograms"]:
+            for t in db_body_ngrams["monograms"]:
                 current_body_monogram_pool_counter = current_body_monogram_pool_counter + t[1]
             current_body_monogram_pool = dict(current_body_monogram_pool_counter)
             current_body_bigram_pool_counter = Counter()
-            for t in db_body_ngrams[type]["bigrams"]:
+            for t in db_body_ngrams["bigrams"]:
                 current_body_bigram_pool_counter = current_body_bigram_pool_counter + t[1]
             current_body_bigram_pool = dict(current_body_bigram_pool_counter)
             current_body_hexagram_pool_counter = Counter()
-            for t in db_body_ngrams[type]["hexagrams"]:
+            for t in db_body_ngrams["hexagrams"]:
                 current_body_hexagram_pool_counter = current_body_hexagram_pool_counter + t[1]
             current_body_hexagram_pool = dict(current_body_hexagram_pool_counter)
-
-            if mode == "train":
-                # Add the body n-gram information to the database for future calculations
-                db_handler.write_object("body_ngrams", db_body_ngrams)
 
             factor_monograms = 1.0/sum(current_body_monogram_pool.values())
             factor_bigrams = 1.0/sum(current_body_bigram_pool.values())

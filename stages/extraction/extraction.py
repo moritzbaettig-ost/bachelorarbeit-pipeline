@@ -7,7 +7,6 @@ import sys
 from type import Type
 import os
 import importlib
-from datetime import datetime
 from database import DatabaseHandler
 
 
@@ -21,7 +20,7 @@ class ExtractionPluginInterface:
         Extracts and returns the features for the following ML-algorithm based on the type.
     """
 
-    def extract_features(self, message: IDSHTTPMessage, type: Type) -> Dict:
+    def extract_features(self, message: IDSHTTPMessage, type: Type, mode: str, db_handler: DatabaseHandler) -> Dict:
         """
         This method extracts and returns the features for the following ML-algorithm based on the type.
 
@@ -31,6 +30,10 @@ class ExtractionPluginInterface:
             The HTTP message from which the features should be extracted.
         type: Type
             The type of the HTTP message.
+        mode: str
+            The mode of the pipeline.
+        db_handler: DatabaseHandler
+            The database handler.
 
         Returns
         ----------
@@ -110,16 +113,12 @@ class Extraction(Stage):
         if self.mode == "train":
             # Save everything in the db so the ML model can use the data for training
             data = {
-                "timestamp": datetime.now(),
                 "features": features,
                 "message": dto.message,
                 "type": dto.type,
                 "label": 1
             }
-            
-            db_data = self.db_handler.get_object("data")
-            db_data.append(data)
-            self.db_handler.write_object("data", db_data)
+            self.db_handler.write_data(data)
 
         new_dto = ExtractionModelDTO(features=features, type=dto.type)
         self.successor.run(new_dto)

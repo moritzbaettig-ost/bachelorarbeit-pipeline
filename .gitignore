@@ -139,3 +139,4 @@ db.fs.lock
 db.fs.tmp
 db_tmp/
 zeo.config
+test/db_test.py

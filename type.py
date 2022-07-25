@@ -39,3 +39,6 @@ class Type:
 
     def __ne__(self, other):
         return not(self == other)
+
+    def __lt__(self, other):
+        return self.__hash__() < other.__hash__()

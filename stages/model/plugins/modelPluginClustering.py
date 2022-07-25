@@ -94,12 +94,12 @@ class Plugin(ModelPluginInterface):
             This variable contains the connection to the database handling class
         """
 
-        db_data = db_handler.get_object("data")
+        db_data = db_handler.get_data()
         db_data_actual_type = []
         count_attack = 0
         count_no_attack = 0
         # Chose the required features for the actual type
-        for d in db_data:
+        for d in db_data.values():
             if d['type'] == type:
                 db_data_actual_type.append(d)
                 if d['label'] == 0:
