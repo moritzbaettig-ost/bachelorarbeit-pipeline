@@ -20,7 +20,7 @@ class Plugin(ExtractionPluginInterface):
         This method calculates the n-gram for a specific string.
     """
 
-    def extract_features(self, message: IDSHTTPMessage, type: Type, mode: str, db_handler: DatabaseHandler) -> Dict:
+    def extract_features(self, message: IDSHTTPMessage, type: Type, mode: str, db_handler: DatabaseHandler, label: int) -> Dict:
         """
         This method extracts and returns the features for the following ML-algorithm based on the type.
 
@@ -110,8 +110,9 @@ class Plugin(ExtractionPluginInterface):
                 current_query_hexagram_pool_counter = current_query_hexagram_pool_counter + t[1]
             current_query_hexagram_pool = dict(current_query_hexagram_pool_counter)
 
-            if mode == "train":
+            if mode == "train" and label == 0:
                 # Add the query n-gram information to the database for future calculations
+                print(db_query_ngrams)
                 db_handler.write_object("query_ngrams", db_query_ngrams)
 
             factor_monograms = 1.0/sum(current_query_monogram_pool.values())
@@ -228,7 +229,7 @@ class Plugin(ExtractionPluginInterface):
                 current_body_hexagram_pool_counter = current_body_hexagram_pool_counter + t[1]
             current_body_hexagram_pool = dict(current_body_hexagram_pool_counter)
 
-            if mode == "train":
+            if mode == "train" and label == 0:
                 # Add the body n-gram information to the database for future calculations
                 db_handler.write_object("body_ngrams", db_body_ngrams)
 
