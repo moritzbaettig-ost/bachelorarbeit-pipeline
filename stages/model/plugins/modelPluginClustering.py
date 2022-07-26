@@ -15,8 +15,6 @@ class Plugin(ModelPluginInterface):
     ----------
     model_dict: dict
         Dictionary for the factory method which contains for each available type a trained ML-Model
-    quant_keys: list
-        List of quantified features which can be used for the ML-Model
 
     Methods
     ----------
@@ -37,10 +35,6 @@ class Plugin(ModelPluginInterface):
 
         # Dict to save the trained models for the Factory pattern
         self.model_dict = {}
-        # List of keys which refers to a quantitative feature
-        self.quant_keys = ["length", "basic_feature_count", "path_feature_count", "path_query_lower",
-                           "path_query_upper", "path_query_numeric", "path_query_spaces", "path_query_specialchar",
-                           "query_monograms", "query_bigrams", "query_hexagrams"]
 
     def get_model(self, type: Type) -> object:
         """
@@ -98,7 +92,6 @@ class Plugin(ModelPluginInterface):
         db_data = db_handler.read("data")
         db_handler.set_strategy(None)
         db_data = db_data.values()
-        print(db_data)
         db_data_actual_type = []
         count_attack = 0
         count_no_attack = 0
@@ -114,7 +107,8 @@ class Plugin(ModelPluginInterface):
         if len(db_data_actual_type) > 5 and count_no_attack > 2 and count_attack > 2:
             training_data = []
             for d in db_data_actual_type:
-                training_data.append({item: d['features'].get(item) for item in self.quant_keys})
+                features = list(d['features'].values())
+                training_data.append(features)
             training_labels = [d['label'] for d in db_data_actual_type]
             self.get_model(type).train_model(training_data, training_labels)
             db_handler.write(self.model_dict, "kMeans_model_dict")
@@ -136,8 +130,8 @@ class Plugin(ModelPluginInterface):
         list
             Returns a list of the pattern [attack (1)/no attack(0), probability of the attack]
         """
-        
-        dict_quant_features = [{item: predicting_data.get(item) for item in self.quant_keys}]
+
+        dict_quant_features = list(predicting_data.values())
         return self.get_model(type).predict(dict_quant_features)
 
 
@@ -242,7 +236,7 @@ class KMeansClass:
         if self.trained:
             # Predict and return the result and accuracy
             print("Cluster")
-            df_predicting_data = pd.DataFrame(predicting_data)
+            df_predicting_data = pd.DataFrame([predicting_data])
             print(self.model.predict(df_predicting_data))
             if self.model.predict(df_predicting_data)[0] in self.alert_clusters:
                 return [1, 1]

@@ -55,8 +55,8 @@ def _process_request(req):
 
 
 script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
-rel_path = "vulnbank_train.txt"
-#rel_path = "vulnbank_anomaly.txt"
+#rel_path = "vulnbank_train.txt"
+rel_path = "vulnbank_anomaly.txt"
 path_normal_data = os.path.join(script_dir, rel_path)
 
 # path_anomaly_data = "vulnbank_anomaly.txt"
