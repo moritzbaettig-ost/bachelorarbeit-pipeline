@@ -7,7 +7,6 @@ import sys
 from type import Type
 import os
 import importlib
-from datetime import datetime
 from database import DatabaseHandler
 
 
@@ -21,7 +20,7 @@ class ExtractionPluginInterface:
         Extracts and returns the features for the following ML-algorithm based on the type.
     """
 
-    def extract_features(self, message: IDSHTTPMessage, type: Type) -> Dict:
+    def extract_features(self, message: IDSHTTPMessage, type: Type, mode: str, db_handler: DatabaseHandler) -> Dict:
         """
         This method extracts and returns the features for the following ML-algorithm based on the type.
 
@@ -31,6 +30,10 @@ class ExtractionPluginInterface:
             The HTTP message from which the features should be extracted.
         type: Type
             The type of the HTTP message.
+        mode: str
+            The mode of the pipeline.
+        db_handler: DatabaseHandler
+            The database handler.
 
         Returns
         ----------
@@ -81,7 +84,7 @@ class Extraction(Stage):
             sys.exit("No extraction plugin detected. Please place default extraction plugin in the extraction plugin directory.")
         sys.path.append('./stages/extraction/plugins')
         self.plugins = [
-            importlib.import_module(f.split('.')[0], '.').Plugin()
+            importlib.import_module(f.split('.')[0], '.').Plugin(db_handler)
             for f in next(os.walk('stages/extraction/plugins'))[2]
         ]
         self.mode = mode
@@ -111,16 +114,14 @@ class Extraction(Stage):
         if self.mode == "train":
             # Save everything in the db so the ML model can use the data for training
             data = {
-                "timestamp": datetime.now(),
                 "features": features,
                 "message": dto.message,
                 "type": dto.type,
                 "label": label
             }
-            
-            db_data = self.db_handler.get_object("data")
-            db_data.append(data)
-            self.db_handler.write_object("data", db_data)
+            self.db_handler.set_strategy(self.db_handler.data_strategy)
+            self.db_handler.write(data, "data")
+            self.db_handler.set_strategy(None)
 
         new_dto = ExtractionModelDTO(features=features, type=dto.type)
         self.successor.run(new_dto)

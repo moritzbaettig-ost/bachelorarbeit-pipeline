@@ -5,7 +5,66 @@ from type import Type
 from sklearn.feature_extraction.text import CountVectorizer
 from collections import Counter
 from datetime import datetime
-from database import DatabaseHandler
+from database import DatabaseHandler, DatabaseHandlerStrategy
+from BTrees.OOBTree import BTree
+import transaction
+import persistent.list
+import ZODB.DB
+import queue
+
+
+class ExtractionPluginDefaultStrategy(DatabaseHandlerStrategy):
+    def __init__(self, db: ZODB.DB, queue: queue.Queue) -> None:
+        self.db = db
+        self.queue = queue
+        connection = self.db.open()
+        root = connection.root()
+        if not "body_ngrams" in root:
+            root["body_ngrams"] = BTree()
+        if not "query_ngrams" in root:
+            root["query_ngrams"] = BTree()
+        transaction.commit()
+        connection.close()
+
+
+    def write(self, data: object, name: str, type: Type) -> None:
+        item = {
+            "worker_method": self._write_worker,
+            "name": name,
+            "object": data,
+            "type": type
+        }
+        self.queue.put(item)
+
+
+    def read(self, name: str, type: Type) -> object:
+        connection = self.db.open()
+        root = connection.root()
+        if not root[name].has_key(type):
+            root[name].insert(type, {
+                    "monograms": persistent.list.PersistentList(),
+                    "bigrams": persistent.list.PersistentList(),
+                    "hexagrams": persistent.list.PersistentList()
+                })
+            transaction.commit()
+        res =  {
+            "monograms": list(root[name][type]["monograms"]),
+            "bigrams": list(root[name][type]["bigrams"]),
+            "hexagrams": list(root[name][type]["hexagrams"])
+        }
+        connection.close()
+        return res
+
+
+    def _write_worker(self, item: dict) -> None:
+        connection = self.db.open()
+        root = connection.root()
+        obj = item["object"]
+        (root[item["name"]].get(item["type"]))["monograms"].append(obj["monograms"])
+        (root[item["name"]].get(item["type"]))["bigrams"].append(obj["bigrams"])
+        (root[item["name"]].get(item["type"]))["hexagrams"].append(obj["hexagrams"])
+        transaction.commit()
+        connection.close()
 
 
 class Plugin(ExtractionPluginInterface):
@@ -20,6 +79,11 @@ class Plugin(ExtractionPluginInterface):
         This method calculates the n-gram for a specific string.
     """
 
+
+    def __init__(self, db_handler: DatabaseHandler) -> None:
+        self.strategy = ExtractionPluginDefaultStrategy(db_handler.db, db_handler.queue)
+
+
     def extract_features(self, message: IDSHTTPMessage, type: Type, mode: str, db_handler: DatabaseHandler, label: int) -> Dict:
         """
         This method extracts and returns the features for the following ML-algorithm based on the type.
@@ -30,6 +94,10 @@ class Plugin(ExtractionPluginInterface):
             The HTTP message from which the features should be extracted.
         type: Type
             The type of the HTTP message.
+        mode: str
+            The mode of the pipeline.
+        db_handler: DatabaseHandler
+            The database handler.
 
         Returns
         ----------
@@ -85,39 +153,48 @@ class Plugin(ExtractionPluginInterface):
             counter_query_bigrams = Counter(dictRequest['query_bigrams'])
             counter_query_hexagrams = Counter(dictRequest['query_hexagrams'])
 
-            db_query_ngrams = db_handler.get_object("query_ngrams")
+            db_handler.set_strategy(self.strategy)
+            db_query_ngrams = db_handler.read("query_ngrams", type)
+            db_handler.set_strategy(None)
+            if mode == "train" and label == 0:
+                # Add the query n-gram information to the database for future calculations
+                db_handler.set_strategy(self.strategy)
+                db_handler.write({
+                    "monograms": (datetime.now(), counter_query_monograms),
+                    "bigrams": (datetime.now(), counter_query_bigrams),
+                    "hexagrams": (datetime.now(), counter_query_hexagrams)
+                }, "query_ngrams", type)
+                db_handler.set_strategy(None)
 
-            if not type in db_query_ngrams:
-                db_query_ngrams[type] = {
-                    "monograms": [],
-                    "bigrams": [],
-                    "hexagrams": []
-                }
-            db_query_ngrams[type]["monograms"].append((datetime.now(), counter_query_monograms))
-            db_query_ngrams[type]["bigrams"].append((datetime.now(), counter_query_bigrams))
-            db_query_ngrams[type]["hexagrams"].append((datetime.now(), counter_query_hexagrams))
+            db_query_ngrams["monograms"].append((datetime.now(), counter_query_monograms))
+            db_query_ngrams["bigrams"].append((datetime.now(), counter_query_bigrams))
+            db_query_ngrams["hexagrams"].append((datetime.now(), counter_query_hexagrams))
 
             current_query_monogram_pool_counter = Counter()
-            for t in db_query_ngrams[type]["monograms"]:
+            for t in db_query_ngrams["monograms"]:
                 current_query_monogram_pool_counter = current_query_monogram_pool_counter + t[1]
             current_query_monogram_pool = dict(current_query_monogram_pool_counter)
             current_query_bigram_pool_counter = Counter()
-            for t in db_query_ngrams[type]["bigrams"]:
+            for t in db_query_ngrams["bigrams"]:
                 current_query_bigram_pool_counter = current_query_bigram_pool_counter + t[1]
             current_query_bigram_pool = dict(current_query_bigram_pool_counter)
             current_query_hexagram_pool_counter = Counter()
-            for t in db_query_ngrams[type]["hexagrams"]:
+            for t in db_query_ngrams["hexagrams"]:
                 current_query_hexagram_pool_counter = current_query_hexagram_pool_counter + t[1]
             current_query_hexagram_pool = dict(current_query_hexagram_pool_counter)
 
-            if mode == "train" and label == 0:
-                # Add the query n-gram information to the database for future calculations
-                print(db_query_ngrams)
-                db_handler.write_object("query_ngrams", db_query_ngrams)
-
-            factor_monograms = 1.0/sum(current_query_monogram_pool.values())
-            factor_bigrams = 1.0/sum(current_query_bigram_pool.values())
-            factor_hexagrams = 1.0/sum(current_query_hexagram_pool.values())
+            if sum(current_query_monogram_pool.values()) > 0:
+                factor_monograms = 1.0/sum(current_query_monogram_pool.values())
+            else:
+                factor_monograms = 0.0
+            if sum(current_query_bigram_pool.values()) > 0:
+                factor_bigrams = 1.0/sum(current_query_bigram_pool.values())
+            else:
+                factor_bigrams = 0.0
+            if sum(current_query_hexagram_pool.values()) > 0:
+                factor_hexagrams = 1.0/sum(current_query_hexagram_pool.values())
+            else:
+                factor_hexagrams = 0.0
             
             remove_monograms = []
             remove_bigrams = []
@@ -204,38 +281,48 @@ class Plugin(ExtractionPluginInterface):
             counter_body_bigrams = Counter(dictRequest['body_bigrams'])
             counter_body_hexagrams = Counter(dictRequest['body_hexagrams'])
 
-            db_body_ngrams = db_handler.get_object("body_ngrams")
+            db_handler.set_strategy(self.strategy)
+            db_body_ngrams = db_handler.read("body_ngrams", type)
+            db_handler.set_strategy(None)
+            if mode == "train" and label == 0:
+                # Add the body n-gram information to the database for future calculations
+                db_handler.set_strategy(self.strategy)
+                db_handler.write({
+                    "monograms": (datetime.now(), counter_body_monograms),
+                    "bigrams": (datetime.now(), counter_body_bigrams),
+                    "hexagrams": (datetime.now(), counter_body_hexagrams)
+                }, "body_ngrams", type)
+                db_handler.set_strategy(None)
 
-            if not type in db_body_ngrams:
-                db_body_ngrams[type] = {
-                    "monograms": [],
-                    "bigrams": [],
-                    "hexagrams": []
-                }
-            db_body_ngrams[type]["monograms"].append((datetime.now(), counter_body_monograms))
-            db_body_ngrams[type]["bigrams"].append((datetime.now(), counter_body_bigrams))
-            db_body_ngrams[type]["hexagrams"].append((datetime.now(), counter_body_hexagrams))
+            db_body_ngrams["monograms"].append((datetime.now(), counter_body_monograms))
+            db_body_ngrams["bigrams"].append((datetime.now(), counter_body_bigrams))
+            db_body_ngrams["hexagrams"].append((datetime.now(), counter_body_hexagrams))
 
             current_body_monogram_pool_counter = Counter()
-            for t in db_body_ngrams[type]["monograms"]:
+            for t in db_body_ngrams["monograms"]:
                 current_body_monogram_pool_counter = current_body_monogram_pool_counter + t[1]
             current_body_monogram_pool = dict(current_body_monogram_pool_counter)
             current_body_bigram_pool_counter = Counter()
-            for t in db_body_ngrams[type]["bigrams"]:
+            for t in db_body_ngrams["bigrams"]:
                 current_body_bigram_pool_counter = current_body_bigram_pool_counter + t[1]
             current_body_bigram_pool = dict(current_body_bigram_pool_counter)
             current_body_hexagram_pool_counter = Counter()
-            for t in db_body_ngrams[type]["hexagrams"]:
+            for t in db_body_ngrams["hexagrams"]:
                 current_body_hexagram_pool_counter = current_body_hexagram_pool_counter + t[1]
             current_body_hexagram_pool = dict(current_body_hexagram_pool_counter)
 
-            if mode == "train" and label == 0:
-                # Add the body n-gram information to the database for future calculations
-                db_handler.write_object("body_ngrams", db_body_ngrams)
-
-            factor_monograms = 1.0/sum(current_body_monogram_pool.values())
-            factor_bigrams = 1.0/sum(current_body_bigram_pool.values())
-            factor_hexagrams = 1.0/sum(current_body_hexagram_pool.values())
+            if sum(current_body_monogram_pool.values()) > 0:
+                factor_monograms = 1.0/sum(current_body_monogram_pool.values())
+            else:
+                factor_monograms = 0.0
+            if sum(current_body_bigram_pool.values()) > 0:
+                factor_bigrams = 1.0/sum(current_body_bigram_pool.values())
+            else:
+                factor_bigrams = 0.0
+            if sum(current_body_hexagram_pool.values()) > 0:
+                factor_hexagrams = 1.0/sum(current_body_hexagram_pool.values())
+            else:
+                factor_hexagrams = 0.0
             
             remove_monograms = []
             remove_bigrams = []
