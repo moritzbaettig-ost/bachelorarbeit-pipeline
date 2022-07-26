@@ -71,7 +71,6 @@ class IPBlocklist:
             if not response.status_code == 200:
                 raise Exception('Unable to fetch AbuseCh list: {url}')
             iplist = self.parse_validate_csv(response=response, columns=6)
-            #print(iplist)
             data = []
             for row in iplist:
                 data.append(self.ip(

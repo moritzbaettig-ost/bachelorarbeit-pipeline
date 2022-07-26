@@ -218,7 +218,6 @@ class LogisticRegressionClass:
         # Check if the model is trained
         if self.trained:
             # Predict and return the result and accuracy
-            print(predicting_data)
             df_predicting_data = pd.DataFrame([predicting_data])
             return [self.model.predict(df_predicting_data)[0], self.model.predict_proba(df_predicting_data)[0][1]]
         else:

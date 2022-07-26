@@ -109,7 +109,6 @@ class Extraction(Stage):
         for plugin in self.plugins:
             temp_features = plugin.extract_features(dto.message, dto.type, self.mode, self.db_handler, label)
             features.update(temp_features)
-        #print(features)
         
         if self.mode == "train":
             # Save everything in the db so the ML model can use the data for training

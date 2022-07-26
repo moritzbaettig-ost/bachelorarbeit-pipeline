@@ -55,8 +55,8 @@ def _process_request(req):
 
 
 script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
-rel_path = "vulnbank_train.txt"
-#rel_path = "vulnbank_anomaly.txt"
+#rel_path = "vulnbank_train.txt"
+rel_path = "vulnbank_anomaly.txt"
 path_normal_data = os.path.join(script_dir, rel_path)
 
 # path_anomaly_data = "vulnbank_anomaly.txt"
@@ -69,5 +69,9 @@ for req in http_requests:
         print(r)
     elif my_method == 'POST':
         r = requests.post(url=my_uri, headers=my_header, data=dictRequest['body'])
+        print(dictRequest['body'])
+        print(r)
+    elif my_method == 'PUT':
+        r = requests.put(url=my_uri, headers=my_header, data=dictRequest['body'])
         print(dictRequest['body'])
         print(r)

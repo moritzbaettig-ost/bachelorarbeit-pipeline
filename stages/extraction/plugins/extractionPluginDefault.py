@@ -376,8 +376,6 @@ class Plugin(ExtractionPluginInterface):
                 dictRequest['body_hexagrams'] = float(occurrence_hexagrams)/float(sum(dictRequest['body_hexagrams'].values()))
             else:
                 dictRequest['body_hexagrams'] = 0.0
-        print("Extraction dict")
-        print(dictRequest)
         return dictRequest
 
 

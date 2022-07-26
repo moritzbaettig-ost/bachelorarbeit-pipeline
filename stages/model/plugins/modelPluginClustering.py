@@ -237,7 +237,6 @@ class KMeansClass:
             # Predict and return the result and accuracy
             print("Cluster")
             df_predicting_data = pd.DataFrame([predicting_data])
-            print(self.model.predict(df_predicting_data))
             if self.model.predict(df_predicting_data)[0] in self.alert_clusters:
                 return [1, 1]
             else:
