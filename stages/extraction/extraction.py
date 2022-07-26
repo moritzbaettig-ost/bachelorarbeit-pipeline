@@ -101,12 +101,13 @@ class Extraction(Stage):
         dto: DTO
             The data transfer object that is received from the previous stage.
         """
-        
+        #Workaround labeling
+        label = 1
         if not isinstance(dto, TypingExtractionDTO):
             sys.exit("Typing: FilterTypingDTO required.")
         features = {}
         for plugin in self.plugins:
-            temp_features = plugin.extract_features(dto.message, dto.type, self.mode, self.db_handler)
+            temp_features = plugin.extract_features(dto.message, dto.type, self.mode, self.db_handler, label)
             features.update(temp_features)
         #print(features)
         
@@ -116,7 +117,7 @@ class Extraction(Stage):
                 "features": features,
                 "message": dto.message,
                 "type": dto.type,
-                "label": 1
+                "label": label
             }
             self.db_handler.set_strategy(self.db_handler.data_strategy)
             self.db_handler.write(data, "data")

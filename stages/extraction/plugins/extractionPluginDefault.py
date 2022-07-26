@@ -79,11 +79,12 @@ class Plugin(ExtractionPluginInterface):
         This method calculates the n-gram for a specific string.
     """
 
+
     def __init__(self, db_handler: DatabaseHandler) -> None:
         self.strategy = ExtractionPluginDefaultStrategy(db_handler.db, db_handler.queue)
 
 
-    def extract_features(self, message: IDSHTTPMessage, type: Type, mode: str, db_handler: DatabaseHandler) -> Dict:
+    def extract_features(self, message: IDSHTTPMessage, type: Type, mode: str, db_handler: DatabaseHandler, label: int) -> Dict:
         """
         This method extracts and returns the features for the following ML-algorithm based on the type.
 
@@ -155,7 +156,7 @@ class Plugin(ExtractionPluginInterface):
             db_handler.set_strategy(self.strategy)
             db_query_ngrams = db_handler.read("query_ngrams", type)
             db_handler.set_strategy(None)
-            if mode == "train":
+            if mode == "train" and label == 0:
                 # Add the query n-gram information to the database for future calculations
                 db_handler.set_strategy(self.strategy)
                 db_handler.write({
@@ -283,7 +284,7 @@ class Plugin(ExtractionPluginInterface):
             db_handler.set_strategy(self.strategy)
             db_body_ngrams = db_handler.read("body_ngrams", type)
             db_handler.set_strategy(None)
-            if mode == "train":
+            if mode == "train" and label == 0:
                 # Add the body n-gram information to the database for future calculations
                 db_handler.set_strategy(self.strategy)
                 db_handler.write({
