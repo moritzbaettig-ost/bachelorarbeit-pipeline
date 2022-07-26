@@ -180,9 +180,18 @@ class Plugin(ExtractionPluginInterface):
                 current_query_hexagram_pool_counter = current_query_hexagram_pool_counter + t[1]
             current_query_hexagram_pool = dict(current_query_hexagram_pool_counter)
 
-            factor_monograms = 1.0/sum(current_query_monogram_pool.values())
-            factor_bigrams = 1.0/sum(current_query_bigram_pool.values())
-            factor_hexagrams = 1.0/sum(current_query_hexagram_pool.values())
+            if sum(current_query_monogram_pool.values()) > 0:
+                factor_monograms = 1.0/sum(current_query_monogram_pool.values())
+            else:
+                factor_monograms = 0.0
+            if sum(current_query_bigram_pool.values()) > 0:
+                factor_bigrams = 1.0/sum(current_query_bigram_pool.values())
+            else:
+                factor_bigrams = 0.0
+            if sum(current_query_hexagram_pool.values()) > 0:
+                factor_hexagrams = 1.0/sum(current_query_hexagram_pool.values())
+            else:
+                factor_hexagrams = 0.0
             
             remove_monograms = []
             remove_bigrams = []
@@ -297,9 +306,18 @@ class Plugin(ExtractionPluginInterface):
                 current_body_hexagram_pool_counter = current_body_hexagram_pool_counter + t[1]
             current_body_hexagram_pool = dict(current_body_hexagram_pool_counter)
 
-            factor_monograms = 1.0/sum(current_body_monogram_pool.values())
-            factor_bigrams = 1.0/sum(current_body_bigram_pool.values())
-            factor_hexagrams = 1.0/sum(current_body_hexagram_pool.values())
+            if sum(current_body_monogram_pool.values()) > 0:
+                factor_monograms = 1.0/sum(current_body_monogram_pool.values())
+            else:
+                factor_monograms = 0.0
+            if sum(current_body_bigram_pool.values()) > 0:
+                factor_bigrams = 1.0/sum(current_body_bigram_pool.values())
+            else:
+                factor_bigrams = 0.0
+            if sum(current_body_hexagram_pool.values()) > 0:
+                factor_hexagrams = 1.0/sum(current_body_hexagram_pool.values())
+            else:
+                factor_hexagrams = 0.0
             
             remove_monograms = []
             remove_bigrams = []
