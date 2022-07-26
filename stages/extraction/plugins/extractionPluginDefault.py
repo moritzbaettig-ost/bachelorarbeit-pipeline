@@ -154,6 +154,7 @@ class Plugin(ExtractionPluginInterface):
 
             db_handler.set_strategy(self.strategy)
             db_query_ngrams = db_handler.read("query_ngrams", type)
+            db_handler.set_strategy(None)
             if mode == "train":
                 # Add the query n-gram information to the database for future calculations
                 db_handler.set_strategy(self.strategy)
@@ -162,6 +163,7 @@ class Plugin(ExtractionPluginInterface):
                     "bigrams": (datetime.now(), counter_query_bigrams),
                     "hexagrams": (datetime.now(), counter_query_hexagrams)
                 }, "query_ngrams", type)
+                db_handler.set_strategy(None)
 
             db_query_ngrams["monograms"].append((datetime.now(), counter_query_monograms))
             db_query_ngrams["bigrams"].append((datetime.now(), counter_query_bigrams))
@@ -280,6 +282,7 @@ class Plugin(ExtractionPluginInterface):
 
             db_handler.set_strategy(self.strategy)
             db_body_ngrams = db_handler.read("body_ngrams", type)
+            db_handler.set_strategy(None)
             if mode == "train":
                 # Add the body n-gram information to the database for future calculations
                 db_handler.set_strategy(self.strategy)
@@ -288,6 +291,7 @@ class Plugin(ExtractionPluginInterface):
                     "bigrams": (datetime.now(), counter_body_bigrams),
                     "hexagrams": (datetime.now(), counter_body_hexagrams)
                 }, "body_ngrams", type)
+                db_handler.set_strategy(None)
 
             db_body_ngrams["monograms"].append((datetime.now(), counter_body_monograms))
             db_body_ngrams["bigrams"].append((datetime.now(), counter_body_bigrams))

@@ -149,9 +149,9 @@ class DatabaseHandler:
         self.queue = queue.Queue()
         self.maintenance_mode = False
 
-        self.default_strategy = DefaultStrategy(self.db, self.queue)
         self.data_strategy = DataStrategy(self.db, self.queue)
-        self._strategy = self.default_strategy
+        self._default_strategy = DefaultStrategy(self.db, self.queue)
+        self._strategy = None
 
         threading.Thread(target=self._write_worker, daemon=True).start()
 
@@ -175,7 +175,10 @@ class DatabaseHandler:
             The object.
         """
 
-        return self._strategy.read(name, type)
+        if self._strategy is None:
+            return self._default_strategy.read(name, type)
+        else:
+            return self._strategy.read(name, type)
 
 
     def write(self, data: object, name: str, type: Type = None) -> None:
@@ -189,7 +192,10 @@ class DatabaseHandler:
             The object that has to be stored.
         """
 
-        self._strategy.write(data, name, type)
+        if self._strategy is None:
+            self._default_strategy.write(data, name, type)
+        else:
+            self._strategy.write(data, name, type)
 
 
     def print_root(self) -> None:

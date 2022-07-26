@@ -120,6 +120,7 @@ class Extraction(Stage):
             }
             self.db_handler.set_strategy(self.db_handler.data_strategy)
             self.db_handler.write(data, "data")
+            self.db_handler.set_strategy(None)
 
         new_dto = ExtractionModelDTO(features=features, type=dto.type)
         self.successor.run(new_dto)

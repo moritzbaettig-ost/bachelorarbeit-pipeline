@@ -77,7 +77,6 @@ class Plugin(ModelPluginInterface):
         """
 
         # Read available Factory from the database
-        db_handler.set_strategy(db_handler.default_strategy)
         model_dict = db_handler.read("lr_model_dict")
         # Check if a Factory dict was available in the database
         if model_dict is not False:
@@ -98,6 +97,7 @@ class Plugin(ModelPluginInterface):
 
         db_handler.set_strategy(db_handler.data_strategy)
         db_data = db_handler.read("data")
+        db_handler.set_strategy(None)
         db_data = db_data.values()
         print("Train_Model")
         db_data_actual_type = []
@@ -118,7 +118,6 @@ class Plugin(ModelPluginInterface):
                 training_data.append({item: d['features'].get(item) for item in self.quant_keys})
             training_labels = [d['label'] for d in db_data_actual_type]
             self.get_model(type).train_model(training_data, training_labels)
-            db_handler.set_strategy(db_handler.default_strategy)
             db_handler.write(self.model_dict, "lr_model_dict")
         else:
             print("Not enough Data available for " + type.path)
