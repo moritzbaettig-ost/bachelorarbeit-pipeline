@@ -102,7 +102,7 @@ class Extraction(Stage):
             The data transfer object that is received from the previous stage.
         """
         #Workaround labeling
-        label = 0
+        label = 1
         if not isinstance(dto, TypingExtractionDTO):
             sys.exit("Typing: FilterTypingDTO required.")
         features = {}
