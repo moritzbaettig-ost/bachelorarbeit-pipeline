@@ -1,4 +1,3 @@
-from typing import Dict
 from stages.extraction import ExtractionPluginInterface
 from message import IDSHTTPMessage
 from type import Type
@@ -14,7 +13,29 @@ import queue
 
 
 class ExtractionPluginDefaultStrategy(DatabaseHandlerStrategy):
+    """
+    This class defines the Strategy that implements the database access logic for the n-gram data.
+
+    Methods
+    ----------
+    write(data, name, type)
+        Writes an object to the databse
+    read(name, type)
+        Reads an object from the database
+    _write_worker(item)
+        Defines the procedure of the daemon thread that works off the queue
+    """
+
     def __init__(self, db: ZODB.DB, queue: queue.Queue) -> None:
+        """
+        Parameters
+        ----------
+        db: ZODB.DB
+            The reference to the DB object of the database handler
+        queue: queue.Queue
+            The reference to the queue object of the database handler
+        """
+
         self.db = db
         self.queue = queue
         connection = self.db.open()
@@ -28,6 +49,19 @@ class ExtractionPluginDefaultStrategy(DatabaseHandlerStrategy):
 
 
     def write(self, data: object, name: str, type: Type) -> None:
+        """
+        Appends the BTree with a dataset
+
+        Parameters
+        ----------
+        data: object
+            The object that has to be written to the database
+        name: str
+            The namespace under which the object has to be saved or appended
+        type: Type
+            The type of the request
+        """
+
         item = {
             "worker_method": self._write_worker,
             "name": name,
@@ -38,6 +72,22 @@ class ExtractionPluginDefaultStrategy(DatabaseHandlerStrategy):
 
 
     def read(self, name: str, type: Type) -> object:
+        """
+        Reads the n-gram pool data from the database
+
+        Parameters
+        ----------
+        name: str
+            The namespace under which the object is saved
+        type: Type
+            The type of the request (not used)
+
+        Returns
+        ----------
+        object
+            The n-gram pool
+        """
+
         connection = self.db.open()
         root = connection.root()
         if not root[name].has_key(type):
@@ -57,6 +107,15 @@ class ExtractionPluginDefaultStrategy(DatabaseHandlerStrategy):
 
 
     def _write_worker(self, item: dict) -> None:
+        """
+        Defines the procedure of the daemon thread that works off the queue
+
+        Parameters
+        ----------
+        item: dict
+            The item with the write information that is passed to the queue
+        """
+
         connection = self.db.open()
         root = connection.root()
         obj = item["object"]
@@ -81,10 +140,17 @@ class Plugin(ExtractionPluginInterface):
 
 
     def __init__(self, db_handler: DatabaseHandler) -> None:
+        """
+        Parameters
+        ----------
+        db_handler: DatabaseHandler
+            The database handler
+        """
+
         self.strategy = ExtractionPluginDefaultStrategy(db_handler.db, db_handler.queue)
 
 
-    def extract_features(self, message: IDSHTTPMessage, type: Type, mode: str, db_handler: DatabaseHandler, label: int) -> Dict:
+    def extract_features(self, message: IDSHTTPMessage, type: Type, mode: str, db_handler: DatabaseHandler, label: int) -> dict:
         """
         This method extracts and returns the features for the following ML-algorithm based on the type.
 

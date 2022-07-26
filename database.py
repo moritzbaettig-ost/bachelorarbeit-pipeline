@@ -9,33 +9,128 @@ from type import Type
 
 
 class DatabaseHandlerStrategy(ABC):
+    """
+    This interface defines the standard methods for all Strategies that implement database access logic for different components.
+
+    Methods
+    ----------
+    write(data, name, type)
+        Writes an object to the databse
+    read(name, type)
+        Reads an object from the database
+    _write_worker(item)
+        Defines the procedure of the daemon thread that works off the queue
+    """
+
     @abstractmethod
     def __init__(self, db: ZODB.DB, queue: queue.Queue) -> None:
+        """
+        Parameters
+        ----------
+        db: ZODB.DB
+            The reference to the DB object of the database handler
+        queue: queue.Queue
+            The reference to the queue object of the database handler
+        """
+
         pass
 
 
     @abstractmethod
     def write(self, data: object, name: str, type: Type) -> None:
+        """
+        Writes an object to the databse
+
+        Parameters
+        ----------
+        data: object
+            The object that has to be written to the database
+        name: str
+            The namespace under which the object has to be saved or appended
+        type: Type
+            The type of the request
+        """
+
         pass
 
     
     @abstractmethod
     def read(self, name: str, type: Type) -> object:
+        """
+        Reads an object from the database
+
+        Parameters
+        ----------
+        name: str
+            The namespace under which the object is saved
+        type: Type
+            The type of the request
+
+        Returns
+        ----------
+        object
+            The desired object
+        """
+
         pass
 
 
     @abstractmethod
     def _write_worker(self, item: dict) -> None:
+        """
+        Defines the procedure of the daemon thread that works off the queue
+
+        Parameters
+        ----------
+        item: dict
+            The item with the write information that is passed to the queue
+        """
+
         pass
 
 
 class DefaultStrategy(DatabaseHandlerStrategy):
+    """
+    This class defines the default Strategy and implement default database access logic.
+
+    Methods
+    ----------
+    write(data, name, type)
+        Writes an object to the databse
+    read(name, type)
+        Reads an object from the database
+    _write_worker(item)
+        Defines the procedure of the daemon thread that works off the queue
+    """
+
     def __init__(self, db: ZODB.DB, queue: queue.Queue) -> None:
+        """
+        Parameters
+        ----------
+        db: ZODB.DB
+            The reference to the DB object of the database handler
+        queue: queue.Queue
+            The reference to the queue object of the database handler
+        """
+
         self.db = db
         self.queue = queue
 
 
     def write(self, data: object, name: str, type: Type) -> None:
+        """
+        Writes an object to the databse
+
+        Parameters
+        ----------
+        data: object
+            The object that has to be written to the database
+        name: str
+            The namespace under which the object has to be saved or appended
+        type: Type
+            The type of the request
+        """
+
         item = {
             "worker_method": self._write_worker,
             "name": name,
@@ -45,6 +140,22 @@ class DefaultStrategy(DatabaseHandlerStrategy):
 
 
     def read(self, name: str, type: Type) -> object:
+        """
+        Reads an object from the database
+
+        Parameters
+        ----------
+        name: str
+            The namespace under which the object is saved
+        type: Type
+            The type of the request
+
+        Returns
+        ----------
+        object
+            The desired object
+        """
+
         connection = self.db.open()
         root = connection.root()
         # Check if object exists in root namespace
@@ -59,6 +170,15 @@ class DefaultStrategy(DatabaseHandlerStrategy):
 
 
     def _write_worker(self, item: dict) -> None:
+        """
+        Defines the procedure of the daemon thread that works off the queue
+
+        Parameters
+        ----------
+        item: dict
+            The item with the write information that is passed to the queue
+        """
+
         connection = self.db.open()
         root = connection.root()
         root[item["name"]] = copy.deepcopy(item["object"])
@@ -67,7 +187,29 @@ class DefaultStrategy(DatabaseHandlerStrategy):
 
 
 class DataStrategy(DatabaseHandlerStrategy):
+    """
+    This class defines the Strategy that implements the database access logic for the machine learning training data.
+
+    Methods
+    ----------
+    write(data, name, type)
+        Writes an object to the databse
+    read(name, type)
+        Reads an object from the database
+    _write_worker(item)
+        Defines the procedure of the daemon thread that works off the queue
+    """
+
     def __init__(self, db: ZODB.DB, queue: queue.Queue) -> None:
+        """
+        Parameters
+        ----------
+        db: ZODB.DB
+            The reference to the DB object of the database handler
+        queue: queue.Queue
+            The reference to the queue object of the database handler
+        """
+
         self.db = db
         self.queue = queue
         connection = self.db.open()
@@ -79,6 +221,19 @@ class DataStrategy(DatabaseHandlerStrategy):
 
 
     def write(self, data: object, name: str, type: Type) -> None:
+        """
+        Appends the BTree with a dataset
+
+        Parameters
+        ----------
+        data: object
+            The object that has to be written to the database
+        name: str
+            The namespace under which the object has to be saved or appended
+        type: Type
+            The type of the request (not used)
+        """
+
         item = {
             "worker_method": self._write_worker,
             "name": name,
@@ -88,6 +243,22 @@ class DataStrategy(DatabaseHandlerStrategy):
 
 
     def read(self, name: str, type: Type) -> object:
+        """
+        Reads the machine learning training data from the database
+
+        Parameters
+        ----------
+        name: str
+            The namespace under which the object is saved
+        type: Type
+            The type of the request (not used)
+
+        Returns
+        ----------
+        object
+            Machine Learning training data
+        """
+
         connection = self.db.open()
         root = connection.root()
         res = dict(root[name])
@@ -96,6 +267,15 @@ class DataStrategy(DatabaseHandlerStrategy):
 
 
     def _write_worker(self, item: dict) -> None:
+        """
+        Defines the procedure of the daemon thread that works off the queue
+
+        Parameters
+        ----------
+        item: dict
+            The item with the write information that is passed to the queue
+        """
+
         connection = self.db.open()
         root = connection.root()
         root[item["name"]].insert(datetime.now(), item["object"])
@@ -115,27 +295,21 @@ class DatabaseHandler:
         The queue that handles the writes for the DB with de FIFO principle.
     maintenance_mode: bool
         If true, the queue is interrupted and waits until the maintenance is over.
+    data_strategy: DataStrategy
+        The Strategy that implements database access logic for the machine learning data
+    _default_strategy: DefaultStrategy
+        The default Strategy that implements the default database access logic
+    _strategy: DatabaseHandlerStrategy
+        The current Strategy
 
     Methods
     ----------
-    get_object(name)
+    set_strategy(strategy)
+        Sets the current Strategy in which the database access logic is defined.
+    read(name, type)
         Reads an object from the database that is stored under a specific namespace and returns it.
-    get_data()
-        Returns the ML training data from the databse.
-    get_query_ngrams(type)
-        Returns the query ngram pool of a specific type.
-    get_body_ngrams(type)
-        Returns the body ngram pool of a specific type.
-    write_object(name, obj)
+    write(data, name, type)
         Writes an object to the database under a specific namespace.
-    write_data(obj)
-        Appends a new dataset for the ML training to the database.
-    write_query_ngrams(type, ngrams)
-        Appends a set of newly calculated query ngrams to the databse.
-    write_body_ngrams(type, ngrams)
-        Appends a set of newly calculated body ngrams to the databse.
-    if_exists(name)
-        Checks if the namespace exists in the database.
     print_root()
         Prints the contents of the database tree.
     _write_worker()
@@ -157,22 +331,34 @@ class DatabaseHandler:
 
 
     def set_strategy(self, strategy: DatabaseHandlerStrategy) -> None:
+        """
+        Sets the current Strategy in which the database access logic is defined.
+
+        Parameters
+        ----------
+        strategy: DatabaseHandlerStrategy
+            The new Strategy that has to be set
+        """
+
         self._strategy = strategy
 
 
     def read(self, name: str, type: Type = None) -> object:
         """
         Reads an object from the database that is stored under a specific namespace and returns it.
+        The database access logic from the current Strategy is used. If no Strategy is set, the default Strategy is used.
 
         Parameters
         ----------
         name: str
             The namespace under that the object is stored.
+        type: Type
+            The type of the request
         
         Returns
         ----------
         object
-            The object.
+            The object read from the databse
         """
 
         if self._strategy is None:
@@ -184,12 +370,16 @@ class DatabaseHandler:
     def write(self, data: object, name: str, type: Type = None) -> None:
         """
         Writes an object to the database under a specific namespace.     
+        The database access logic from the current Strategy is used. If no Strategy is set, the default Strategy is used.
+
         Parameters
         ----------
+        data: object
+            The object that has to be stored.
         name : str
             The namespace under that the object should be stored.
-        obj : object
-            The object that has to be stored.
+        type: Type
+            The type of the request
         """
 
         if self._strategy is None:
