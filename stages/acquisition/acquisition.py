@@ -290,7 +290,7 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
         if req_type == 'POST':
             m.body = m.body.decode('utf-8')
             m.body=parser.unquote(m.body)
-        print(m)
+        # print(m)
         dto = AcquisitionFilterDTO(message=m)
         self.successor.run(dto)
 
