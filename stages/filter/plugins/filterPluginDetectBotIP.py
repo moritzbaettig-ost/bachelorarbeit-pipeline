@@ -1,3 +1,4 @@
+from collections import namedtuple
 import time
 from threading import Thread
 import requests
@@ -62,6 +63,7 @@ class IPBlocklist:
     # Class constructor which initiates the Update Job
     def __init__(self):
         self.ip_blocklist = []
+        self.ip = namedtuple('IPAddress', ['first_seen', 'ipaddress', 'port', 'last_seen', 'family'])
         # Run Update Job every 10 min
         self.daemon = Thread(target=self.get_ip_aggressive, args=(600,), daemon=True, name='UpdateIPBlocklistBackground')
         self.daemon.start()
