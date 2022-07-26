@@ -107,21 +107,23 @@ class Plugin(ExtractionPluginInterface):
 
         dictRequest = {}
         # Basic information
-        dictRequest['source_address'] = message.source_address
-        dictRequest['method'] = message.method
-        dictRequest['path'] = message.path
-        dictRequest['protocol_version'] = message.protocol_version
+        #dictRequest['source_address'] = message.source_address
+        #dictRequest['method'] = message.method
+        #dictRequest['path'] = message.path
+        #dictRequest['protocol_version'] = message.protocol_version
         dictRequest['length'] = len(message)
 
         # Header information
+        dictHeader = {}
         for entry in message.header:
-            dictRequest[entry] = message.header[entry]
+            dictHeader[entry] = message.header[entry]
 
-        dictRequest['basic_feature_count'] = len(dictRequest.keys())
+        # Header Features and Request length
+        dictRequest['basic_feature_count'] = len(dictHeader.keys())+1
 
         # Query
         if type.has_query:
-            dictRequest['path_query'] = message.query
+            #dictRequest['path_query'] = message.query
             dictRequest['path_feature_count'] = len(message.query.split('&'))
             count_lower = 0
             count_upper = 0
@@ -249,7 +251,7 @@ class Plugin(ExtractionPluginInterface):
 
         # Body
         if type.has_body:
-            dictRequest['body'] = message.body
+            #dictRequest['body'] = message.body
 
             count_lower = 0
             count_upper = 0
@@ -374,7 +376,6 @@ class Plugin(ExtractionPluginInterface):
                 dictRequest['body_hexagrams'] = float(occurrence_hexagrams)/float(sum(dictRequest['body_hexagrams'].values()))
             else:
                 dictRequest['body_hexagrams'] = 0.0
-
         return dictRequest
 
 

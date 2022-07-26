@@ -31,7 +31,7 @@ def _process_request(req):
     Splits a request into lines and convert a string into ints.
     """
     my_method = ""
-    my_uri = "http://localhost:80"
+    my_uri = "http://127.0.0.1:80"
     dictRequest={}
     my_header = {}
     i = 0
@@ -55,8 +55,8 @@ def _process_request(req):
 
 
 script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
-rel_path = "vulnbank_train.txt"
-#rel_path = "vulnbank_anomaly.txt"
+#rel_path = "vulnbank_train.txt"
+rel_path = "vulnbank_anomaly.txt"
 path_normal_data = os.path.join(script_dir, rel_path)
 
 # path_anomaly_data = "vulnbank_anomaly.txt"
@@ -69,5 +69,9 @@ for req in http_requests:
         print(r)
     elif my_method == 'POST':
         r = requests.post(url=my_uri, headers=my_header, data=dictRequest['body'])
+        print(dictRequest['body'])
+        print(r)
+    elif my_method == 'PUT':
+        r = requests.put(url=my_uri, headers=my_header, data=dictRequest['body'])
         print(dictRequest['body'])
         print(r)

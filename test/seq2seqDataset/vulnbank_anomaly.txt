@@ -220,17 +220,6 @@ END
 
 ST@RT
 Thu, 15 Mar 2018 14:45:52 INFO
-GET http://u836p87mzs76v0qj8svgw2fic9i1hp9txjk98y.burpcollaborator.net/ HTTP/1.1
-Host: 10.0.212.25
-Pragma: no-cache
-Cache-Control: no-cache, no-transform
-Connection: close
-
-
-END
-
-ST@RT
-Thu, 15 Mar 2018 14:45:52 INFO
 GET / HTTP/1.1
 Host: 10.0.212.25
 X-Forwarded-For: 4sxg9irwj2rgfaats2fqgczswj2b1zurih57tw.burpcollaborator.net
