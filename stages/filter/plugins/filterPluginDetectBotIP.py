@@ -1,5 +1,4 @@
 import time
-from collections import namedtuple
 from threading import Thread
 import requests
 from message import IDSHTTPMessage
@@ -34,27 +33,62 @@ class Plugin(FilterPluginInterface):
             If the message should be filtered and the reason for it.
         """
 
+        # Checks if the source address is in the blocklist
         if message.source_address in self.blocklist.get_ip_blocklist():
             return (True, "Blocked ")
         return (False, "")
 
 
 class IPBlocklist:
+    """
+    Class which implements the singelton pattern for the IPBlocklist Update Job.
+    This class updates the Blocklist every 10 min from https://feodotracker.abuse.ch/downloads/ipblocklist_aggressive.csv.
+
+    Attributes
+    ----------
+    ip_blocklist: list
+    daemon: Thread
+
+    Methods
+    ----------
+    parse_validate_csv(response, columns)
+        This method parses the csv data and checks the downloaded data
+    get_ip_aggressive(interval_sec)
+        Downloads the new Blocklist definitions.
+    get_ip_blocklist()
+        Returns the IPBlocklist
+    """
+
+    # Class constructor which initiates the Update Job
     def __init__(self):
         self.ip_blocklist = []
-        self.daemon = Thread(target=self.get_ip_aggressive, args=(3,), daemon=True, name='Background')
+        # Run Update Job every 10 min
+        self.daemon = Thread(target=self.get_ip_aggressive, args=(600,), daemon=True, name='UpdateIPBlocklistBackground')
         self.daemon.start()
 
+    # Singelton Pattern which creates an instance or returns the reference to an existing instance
     def __new__(cls, *args, **kw):
         if not hasattr(cls, '_instance'):
             orig = super(IPBlocklist, cls)
             cls._instance = orig.__new__(cls)
         return cls._instance
 
+    def parse_validate_csv(self, response: requests, columns: int):
+        """
+        Parse the downloaded csv file and validates the data
 
-    ip = namedtuple('IPAddress', ['first_seen', 'ipaddress', 'port', 'last_seen', 'family'])
+        Parameters
+        ----------
+        response: requests
+            This parameter is the downloaded csv file.
+        columns: int
+            Number of columns from the csv file
 
-    def parse_validate_csv(self, response, columns):
+        Returns
+        ----------
+        rows: list
+            List of rows from the csv file
+        """
         # split lines and convert into ascii
         rows = [line.decode('ascii', errors='ignore') for line in response.content.splitlines()]
         # remove commented lines & split
@@ -64,9 +98,20 @@ class IPBlocklist:
         return rows
 
     def get_ip_aggressive(self, interval_sec: int) -> None:
+        """
+        This function downloads the newest Blocklist in a specific interval
+
+        Parameters
+        ----------
+        interval_sec: int
+            Wait for this number of seconds
+
+        """
         #run forever
         while True:
+            # Path of the newest Blocklist
             url = "https://feodotracker.abuse.ch/downloads/ipblocklist_aggressive.csv"
+            # Download the Blocklist
             response = requests.get(url)
             if not response.status_code == 200:
                 raise Exception('Unable to fetch AbuseCh list: {url}')
@@ -80,8 +125,16 @@ class IPBlocklist:
                     last_seen=row[3],
                     family=row[5]
                 ))
+            # Set the newest Blocklist
             self.ip_blocklist = [i[1] for i in data]
             time.sleep(interval_sec)
 
     def get_ip_blocklist(self):
+        """
+        Returns the blocklist.
+
+        Returns
+        ----------
+        ip_blocklist: list
+        """
         return self.ip_blocklist

@@ -31,7 +31,7 @@ def _process_request(req):
     Splits a request into lines and convert a string into ints.
     """
     my_method = ""
-    my_uri = "http://localhost:80"
+    my_uri = "http://127.0.0.1:80"
     dictRequest={}
     my_header = {}
     i = 0
