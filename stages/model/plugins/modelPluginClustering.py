@@ -76,7 +76,8 @@ class Plugin(ModelPluginInterface):
         """
         
         # Read available Factory from the database
-        model_dict = db_handler.get_object("kMeans_model_dict")
+        db_handler.set_strategy(db_handler.default_strategy)
+        model_dict = db_handler.read("kMeans_model_dict")
         # Check if a Factory dict was available in the database
         if model_dict is not False:
             # Check if the factory is corrupt
@@ -94,12 +95,14 @@ class Plugin(ModelPluginInterface):
             This variable contains the connection to the database handling class
         """
 
-        db_data = db_handler.get_data()
+        db_handler.set_strategy(db_handler.data_strategy)
+        db_data = db_handler.read("data")
+        db_data = db_data.values()
         db_data_actual_type = []
         count_attack = 0
         count_no_attack = 0
         # Chose the required features for the actual type
-        for d in db_data.values():
+        for d in db_data:
             if d['type'] == type:
                 db_data_actual_type.append(d)
                 if d['label'] == 0:
@@ -113,7 +116,8 @@ class Plugin(ModelPluginInterface):
                 training_data.append({item: d['features'].get(item) for item in self.quant_keys})
             training_labels = [d['label'] for d in db_data_actual_type]
             self.get_model(type).train_model(training_data, training_labels)
-            db_handler.write_object("kMeans_model_dict", self.model_dict)
+            db_handler.set_strategy(db_handler.default_strategy)
+            db_handler.write(self.model_dict, "kMeans_model_dict")
         else:
             print("Not enough Data available for " + type.path)
 

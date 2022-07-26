@@ -1,43 +1,50 @@
 from abc import ABC, abstractmethod
-import ZODB, ZODB.FileStorage
+import ZODB, ZODB.FileStorage, ZODB.DB
 import transaction
 import copy
 import threading, queue
 from BTrees.OOBTree import BTree
 from datetime import datetime
 from type import Type
-import persistent.list
 
 
 class DatabaseHandlerStrategy(ABC):
     @abstractmethod
-    def write(self, name: str, data: object) -> None:
+    def __init__(self, db: ZODB.DB, queue: queue.Queue) -> None:
+        pass
+
+
+    @abstractmethod
+    def write(self, data: object, name: str, type: Type) -> None:
         pass
 
     
     @abstractmethod
-    def read(self, name: str) -> object:
+    def read(self, name: str, type: Type) -> object:
         pass
 
 
     @abstractmethod
-    def _write_worker(self) -> None:
+    def _write_worker(self, item: dict) -> None:
         pass
 
 
 class DefaultStrategy(DatabaseHandlerStrategy):
-    def __init__(self) -> None:
-        self.queue = queue.Queue()
-        self.maintenance_mode = False
-        threading.Thread(target=self._write_worker, daemon=True).start()
+    def __init__(self, db: ZODB.DB, queue: queue.Queue) -> None:
+        self.db = db
+        self.queue = queue
 
 
-    def write(self, name: str, data: object) -> None:
-        item = (name, data)
+    def write(self, data: object, name: str, type: Type) -> None:
+        item = {
+            "worker_method": self._write_worker,
+            "name": name,
+            "object": data
+        }
         self.queue.put(item)
 
 
-    def read(self, name: str) -> object:
+    def read(self, name: str, type: Type) -> object:
         connection = self.db.open()
         root = connection.root()
         # Check if object exists in root namespace
@@ -51,18 +58,49 @@ class DefaultStrategy(DatabaseHandlerStrategy):
         return obj
 
 
-    def _write_worker(self) -> None:
-        while True:
-            if not self.maintenance_mode:
-                item = self.queue.get()
-                name = item[0]
-                obj = item[1]
-                connection = self.db.open()
-                root = connection.root()
-                root[name] = copy.deepcopy(obj)
-                transaction.commit()
-                connection.close()
-                self.queue.task_done()
+    def _write_worker(self, item: dict) -> None:
+        connection = self.db.open()
+        root = connection.root()
+        root[item["name"]] = copy.deepcopy(item["object"])
+        transaction.commit()
+        connection.close()
+
+
+class DataStrategy(DatabaseHandlerStrategy):
+    def __init__(self, db: ZODB.DB, queue: queue.Queue) -> None:
+        self.db = db
+        self.queue = queue
+        connection = self.db.open()
+        root = connection.root()
+        if not "data" in root:
+            root["data"] = BTree()
+        transaction.commit()
+        connection.close()
+
+
+    def write(self, data: object, name: str, type: Type) -> None:
+        item = {
+            "worker_method": self._write_worker,
+            "name": name,
+            "object": data
+        }
+        self.queue.put(item)
+
+
+    def read(self, name: str, type: Type) -> object:
+        connection = self.db.open()
+        root = connection.root()
+        res = dict(root[name])
+        connection.close()
+        return res
+
+
+    def _write_worker(self, item: dict) -> None:
+        connection = self.db.open()
+        root = connection.root()
+        root[item["name"]].insert(datetime.now(), item["object"])
+        transaction.commit()
+        connection.close()
 
 
 class DatabaseHandler:
@@ -107,14 +145,22 @@ class DatabaseHandler:
     def __init__(self):
         storage = ZODB.FileStorage.FileStorage('db.fs')
         self.db = ZODB.DB(storage)
-        self._strategy = DefaultStrategy()
+
+        self.queue = queue.Queue()
+        self.maintenance_mode = False
+
+        self.default_strategy = DefaultStrategy(self.db, self.queue)
+        self.data_strategy = DataStrategy(self.db, self.queue)
+        self._strategy = self.default_strategy
+
+        threading.Thread(target=self._write_worker, daemon=True).start()
 
 
     def set_strategy(self, strategy: DatabaseHandlerStrategy) -> None:
         self._strategy = strategy
 
 
-    def read(self, name: str) -> object:
+    def read(self, name: str, type: Type = None) -> object:
         """
         Reads an object from the database that is stored under a specific namespace and returns it.
 
@@ -129,28 +175,10 @@ class DatabaseHandler:
             The object.
         """
 
-        return self._strategy.read(name)
+        return self._strategy.read(name, type)
 
 
-    # TODO: Move in Model Strategy
-    def get_data(self) -> dict:
-        """
-        Returns the ML training data from the databse.
-
-        Returns
-        ----------
-        dict
-            The dictionary with the training data.
-        """
-
-        connection = self.db.open()
-        root = connection.root()
-        res = dict(root["data"])
-        connection.close()
-        return res
-
-
-    def write_object(self, name: str, data: object) -> None:
+    def write(self, data: object, name: str, type: Type = None) -> None:
         """
         Writes an object to the database under a specific namespace.     
         Parameters
@@ -161,22 +189,7 @@ class DatabaseHandler:
             The object that has to be stored.
         """
 
-        self._strategy.write(name, data)
-
-
-    # TODO: Move in Model Strategy
-    def write_data(self, obj: dict) -> None:
-        """
-        Appends a new dataset for the ML training to the database.
-
-        Parameters
-        ----------
-        obj: dict
-            The dictionary with the new feature data.
-        """
-
-        item = ("data", obj, None)
-        self.queue.put(item)
+        self._strategy.write(data, name, type)
 
 
     def print_root(self) -> None:
@@ -190,7 +203,6 @@ class DatabaseHandler:
         connection.close()
 
 
-    #TODO
     def _write_worker(self) -> None:
         """
         Defines the worker function for the DB write daemon thread.
@@ -199,23 +211,5 @@ class DatabaseHandler:
         while True:
             if not self.maintenance_mode:
                 item = self.queue.get()
-                name = item[0]
-                obj = item[1]
-                type = item[2]
-                connection = self.db.open()
-                root = connection.root()
-                if name == "data":
-                    root["data"].insert(datetime.now(), obj)
-                elif name == "query_ngrams":
-                    (root["query_ngrams"].get(type))["monograms"].append(obj["monograms"])
-                    (root["query_ngrams"].get(type))["bigrams"].append(obj["bigrams"])
-                    (root["query_ngrams"].get(type))["hexagrams"].append(obj["hexagrams"])
-                elif name == "body_ngrams":
-                    (root["body_ngrams"].get(type))["monograms"].append(obj["monograms"])
-                    (root["body_ngrams"].get(type))["bigrams"].append(obj["bigrams"])
-                    (root["body_ngrams"].get(type))["hexagrams"].append(obj["hexagrams"])
-                else:
-                    root[name] = copy.deepcopy(obj)
-                transaction.commit()
-                connection.close()
+                item["worker_method"](item)
                 self.queue.task_done()

@@ -9,128 +9,62 @@ from database import DatabaseHandler, DatabaseHandlerStrategy
 from BTrees.OOBTree import BTree
 import transaction
 import persistent.list
+import ZODB.DB
+import queue
 
 
 class ExtractionPluginDefaultStrategy(DatabaseHandlerStrategy):
-    def __init__(self, db_handler: DatabaseHandler) -> None:
-        connection = db_handler.db.open()
+    def __init__(self, db: ZODB.DB, queue: queue.Queue) -> None:
+        self.db = db
+        self.queue = queue
+        connection = self.db.open()
         root = connection.root()
         if not "body_ngrams" in root:
             root["body_ngrams"] = BTree()
         if not "query_ngrams" in root:
             root["query_ngrams"] = BTree()
-        if not "data" in root:
-            root["data"] = BTree()
         transaction.commit()
         connection.close()
 
 
-    def write(self, name: str, data: object) -> None:
-        #TODO
-        pass
+    def write(self, data: object, name: str, type: Type) -> None:
+        item = {
+            "worker_method": self._write_worker,
+            "name": name,
+            "object": data,
+            "type": type
+        }
+        self.queue.put(item)
 
 
-    def read(self, name: str) -> object:
-        #TODO
-        pass
-
-
-    def get_query_ngrams(self, type: Type) -> dict:
-        """
-        Returns the query ngram pool of a specific type.
-
-        Parameters
-        ----------
-        type: Type
-            The HTTP message type
-        
-        Returns
-        ----------
-        dict
-            The dictionary with the query ngram pool
-        """
-
+    def read(self, name: str, type: Type) -> object:
         connection = self.db.open()
         root = connection.root()
-        if not root["query_ngrams"].has_key(type):
-            root["query_ngrams"].insert(type, {
+        if not root[name].has_key(type):
+            root[name].insert(type, {
                     "monograms": persistent.list.PersistentList(),
                     "bigrams": persistent.list.PersistentList(),
                     "hexagrams": persistent.list.PersistentList()
                 })
             transaction.commit()
         res =  {
-            "monograms": list(root["query_ngrams"][type]["monograms"]),
-            "bigrams": list(root["query_ngrams"][type]["bigrams"]),
-            "hexagrams": list(root["query_ngrams"][type]["hexagrams"])
+            "monograms": list(root[name][type]["monograms"]),
+            "bigrams": list(root[name][type]["bigrams"]),
+            "hexagrams": list(root[name][type]["hexagrams"])
         }
         connection.close()
         return res
 
 
-    def get_body_ngrams(self, type: Type) -> dict:
-        """
-        Returns the body ngram pool of a specific type.
-
-        Parameters
-        ----------
-        type: Type
-            The HTTP message type
-        
-        Returns
-        ----------
-        dict
-            The dictionary with the body ngram pool
-        """
-
+    def _write_worker(self, item: dict) -> None:
         connection = self.db.open()
         root = connection.root()
-        if not root["body_ngrams"].has_key(type):
-            root["body_ngrams"].insert(type, {
-                    "monograms": persistent.list.PersistentList(),
-                    "bigrams": persistent.list.PersistentList(),
-                    "hexagrams": persistent.list.PersistentList()
-                })
-            transaction.commit()
-        res =  {
-            "monograms": list(root["body_ngrams"][type]["monograms"]),
-            "bigrams": list(root["body_ngrams"][type]["bigrams"]),
-            "hexagrams": list(root["body_ngrams"][type]["hexagrams"])
-        }
+        obj = item["object"]
+        (root[item["name"]].get(item["type"]))["monograms"].append(obj["monograms"])
+        (root[item["name"]].get(item["type"]))["bigrams"].append(obj["bigrams"])
+        (root[item["name"]].get(item["type"]))["hexagrams"].append(obj["hexagrams"])
+        transaction.commit()
         connection.close()
-        return res
-
-
-    def write_query_ngrams(self, type: Type, ngrams: dict) -> None:
-        """
-        Appends a set of newly calculated query ngrams to the databse.
-
-        Parameters
-        ----------
-        type: Type
-            The HTTP message type
-        ngrams: dict
-            The ngrams dictionary
-        """
-
-        item = ("query_ngrams", ngrams, type)
-        self.queue.put(item)
-
-
-    def write_body_ngrams(self, type: Type, ngrams: dict) -> None:
-        """
-        Appends a set of newly calculated body ngrams to the databse.
-
-        Parameters
-        ----------
-        type: Type
-            The HTTP message type
-        ngrams: dict
-            The ngrams dictionary
-        """
-
-        item = ("body_ngrams", ngrams, type)
-        self.queue.put(item)
 
 
 class Plugin(ExtractionPluginInterface):
@@ -146,8 +80,7 @@ class Plugin(ExtractionPluginInterface):
     """
 
     def __init__(self, db_handler: DatabaseHandler) -> None:
-        strategy = ExtractionPluginDefaultStrategy(db_handler)
-        db_handler.set_strategy(strategy)
+        self.strategy = ExtractionPluginDefaultStrategy(db_handler.db, db_handler.queue)
 
 
     def extract_features(self, message: IDSHTTPMessage, type: Type, mode: str, db_handler: DatabaseHandler) -> Dict:
@@ -219,14 +152,16 @@ class Plugin(ExtractionPluginInterface):
             counter_query_bigrams = Counter(dictRequest['query_bigrams'])
             counter_query_hexagrams = Counter(dictRequest['query_hexagrams'])
 
-            db_query_ngrams = db_handler.get_query_ngrams(type)
+            db_handler.set_strategy(self.strategy)
+            db_query_ngrams = db_handler.read("query_ngrams", type)
             if mode == "train":
                 # Add the query n-gram information to the database for future calculations
-                db_handler.write_query_ngrams(type, {
+                db_handler.set_strategy(self.strategy)
+                db_handler.write({
                     "monograms": (datetime.now(), counter_query_monograms),
                     "bigrams": (datetime.now(), counter_query_bigrams),
                     "hexagrams": (datetime.now(), counter_query_hexagrams)
-                })
+                }, "query_ngrams", type)
 
             db_query_ngrams["monograms"].append((datetime.now(), counter_query_monograms))
             db_query_ngrams["bigrams"].append((datetime.now(), counter_query_bigrams))
@@ -334,14 +269,16 @@ class Plugin(ExtractionPluginInterface):
             counter_body_bigrams = Counter(dictRequest['body_bigrams'])
             counter_body_hexagrams = Counter(dictRequest['body_hexagrams'])
 
-            db_body_ngrams = db_handler.get_body_ngrams(type)
+            db_handler.set_strategy(self.strategy)
+            db_body_ngrams = db_handler.read("body_ngrams", type)
             if mode == "train":
                 # Add the body n-gram information to the database for future calculations
-                db_handler.write_body_ngrams(type, {
+                db_handler.set_strategy(self.strategy)
+                db_handler.write({
                     "monograms": (datetime.now(), counter_body_monograms),
                     "bigrams": (datetime.now(), counter_body_bigrams),
                     "hexagrams": (datetime.now(), counter_body_hexagrams)
-                })
+                }, "body_ngrams", type)
 
             db_body_ngrams["monograms"].append((datetime.now(), counter_body_monograms))
             db_body_ngrams["bigrams"].append((datetime.now(), counter_body_bigrams))
