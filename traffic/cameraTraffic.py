@@ -1,5 +1,6 @@
 from time import sleep
 import requests
+import time
 
 def simulate_initial_connection():
     my_headers = {
@@ -261,7 +262,7 @@ def simulate_snap():
 
 
 def simulate_post():
-    r = requests.post("http://localhost:80/post_test", data="test_data")
+    r = requests.post("http://127.0.0.1:80/post_test/post_test", data="test_data")
     print(r)
 
 def simulate_initial_connection_attack():
@@ -399,6 +400,18 @@ def test():
     r = requests.get(url="http://localhost:80/web/cgi-bin/hi3510/ptzctrl.cgi?f=2", auth=("admin", "admin"), headers=my_headers)
     print(r)
 
+def measure():
+    time_ids = []
+    t3 = time.perf_counter()
+    for i in range(200):
+        t1 = time.perf_counter()
+        r = requests.post("http://127.0.0.1:80/post_test", data="test_data")
+        t2 = time.perf_counter()
+        time_ids.append(t2-t1)
+    t4 = time.perf_counter()
+    print("Mean time: "+str(sum(time_ids)/len(time_ids)))
+    print(f"Total time: {t4 - t3:0.4f}")
+
 TRAIN_NORMAL_TRAFFIC = False
 
 if TRAIN_NORMAL_TRAFFIC:
@@ -408,3 +421,5 @@ else:
     simulate_moving_attack()
 #simulate_snap()
 #simulate_post()
+
+#measure()
