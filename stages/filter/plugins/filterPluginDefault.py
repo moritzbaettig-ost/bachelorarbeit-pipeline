@@ -12,7 +12,7 @@ class Plugin(FilterPluginInterface):
         Returns if the given message should be filtered or not.
     """
 
-    def filter_request(self, message: IDSHTTPMessage) -> tuple[bool, str]:
+    def filter_request(self, message: IDSHTTPMessage) -> tuple[bool, str, str]:
         """
         Returns if the given message should be filtered or not.
 
@@ -27,4 +27,4 @@ class Plugin(FilterPluginInterface):
             If the message should be filtered and the reason for it.
         """
         
-        return (False, "")
+        return (False, "", "Default Filter Plugin")

@@ -19,7 +19,7 @@ class Plugin(FilterPluginInterface):
     def __init__(self):
         self.blocklist = IPBlocklist()
 
-    def filter_request(self, message: IDSHTTPMessage) -> tuple[bool, str]:
+    def filter_request(self, message: IDSHTTPMessage) -> tuple[bool, str, str]:
         """
         Returns if the given message should be filtered or not.
 
@@ -36,8 +36,8 @@ class Plugin(FilterPluginInterface):
 
         # Checks if the source address is in the blocklist
         if message.source_address in self.blocklist.get_ip_blocklist():
-            return (True, "Blocked ")
-        return (False, "")
+            return (True, "Blocked", "Bot IP Filter Plugin")
+        return (False, "", "Bot IP Filter Plugin")
 
 
 class IPBlocklist:

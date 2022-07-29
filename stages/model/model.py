@@ -1,3 +1,4 @@
+from re import S
 from alerting.IObservable import IObservable
 from alerting.IObserver import IObserver
 from database import DatabaseHandler
@@ -135,7 +136,7 @@ class Model(Stage, IObservable):
             if ml_model_result[0] > 0:
                 print("Attack")
                 # Create an Alert
-                alert = Alert(msg=f"Attack detected with accuracy({ml_model_result[1]})")
+                alert = Alert(msg=f"Attack detected with accuracy({ml_model_result[1]})", source="Model Stage")
                 self.notify(alert)
             pass
 
