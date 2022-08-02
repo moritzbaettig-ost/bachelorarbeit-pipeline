@@ -435,6 +435,9 @@ class HelperKMeansPerfAnalytics:
                 plt.legend()
                 plt.show()
 
+    def score_cluster(self):
+        pass
+
 
 helperData = HelperDataClass()
 logRegressionAnalytics = HelperLogRegressionPerfAnalytics(helperData)
