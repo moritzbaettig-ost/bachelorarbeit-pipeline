@@ -35,7 +35,7 @@ class Pipeline:
         if args.logging:
             print("Logging activated")
 
-        alerting_observer = Alerting()
+        alerting_observer = Alerting(args.logging)
         database_handler = DatabaseHandler()
 
         # STAGE: Model

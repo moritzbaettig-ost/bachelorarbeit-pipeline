@@ -13,7 +13,7 @@ class Plugin(FilterPluginInterface):
         Returns if the given message should be filtered or not.
     """
 
-    def filter_request(self, message: IDSHTTPMessage) -> tuple[bool, str]:
+    def filter_request(self, message: IDSHTTPMessage) -> tuple[bool, str, str]:
         """
         Returns if the given message should be filtered or not.
 
@@ -32,5 +32,5 @@ class Plugin(FilterPluginInterface):
             query1 = message.query
             query2 = parser.unquote(query1)
             if(query1!=query2):
-                return (True, "Double Encoded Path Query detected")
-        return (False, "")
+                return (True, "Double Encoded Path Query detected", "Double Encoding Filter Plugin")
+        return (False, "", "Double Encoding Filter Plugin")

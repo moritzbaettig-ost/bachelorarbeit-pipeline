@@ -20,7 +20,7 @@ class FilterPluginInterface:
         Returns if the given message should be filtered or not.
     """
 
-    def filter_request(self, message: IDSHTTPMessage) -> tuple[bool, str]:
+    def filter_request(self, message: IDSHTTPMessage) -> tuple[bool, str, str]:
         """
         Returns if the given message should be filtered or not.
 
@@ -32,7 +32,7 @@ class FilterPluginInterface:
         Returns
         ----------
         tuple[bool, str]
-            If the message should be filtered and the reason for it.
+            If the message should be filtered, the reason for it and the source.
         """
 
         pass
@@ -96,7 +96,7 @@ class RequestFilter(Stage, IObservable):
         for plugin in self.plugins:
             filter_response = plugin.filter_request(dto.message)
             if filter_response[0]:
-                alert = Alert(msg=filter_response[1])
+                alert = Alert(msg=filter_response[1], source="Filter Stage: "+str(filter_response[2]))
                 self.notify(alert)
                 return
         new_dto = FilterTypingDTO(message=dto.message)
