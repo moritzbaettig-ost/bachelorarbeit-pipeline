@@ -1,7 +1,12 @@
+from cmath import exp
 from dataclasses import dataclass
+import logging
+from logging.handlers import QueueHandler, QueueListener
 from alerting.IObservable import IObservable
 from alerting.IObserver import IObserver
-import io
+import queue
+import threading
+import time
 
 
 @dataclass
@@ -27,8 +32,10 @@ class Alerting(IObserver):
 
     Attributes
     ----------
-    logging: bool
+    logging_mode: bool
         States if logging is activated or not
+    logger: Logger
+        The logger instance that is responsible for the logging
     
     Methods
     ----------
@@ -36,15 +43,33 @@ class Alerting(IObserver):
         Gets called by an Observable and prints an Alert with a specific message
     """
     
-    def __init__(self, logging: bool) -> None:
+    def __init__(self, logging_mode: bool) -> None:
         """
         Parameters
         ----------
-        logging: bool
+        logging_mode: bool
             States if logging is activated or not
         """
 
-        self.logging = logging
+        self.logging_mode = logging_mode
+
+        logging.basicConfig(filemode='a', datefmt='%H:%M:%S', level=logging.INFO)
+        self.logger = logging.getLogger("Alerting")
+
+        log_queue = queue.Queue()
+        queue_handler = QueueHandler(log_queue)
+        self.logger.addHandler(queue_handler)
+
+        formatter = logging.Formatter('%(asctime)s, %(name)s %(levelname)s %(message)s')
+
+        console_handler = logging.StreamHandler()
+        console_handler.setFormatter(formatter)
+
+        file_handler = logging.FileHandler("alerting/log.log")
+        file_handler.setFormatter(formatter)
+
+        listener = QueueListener(log_queue, console_handler, file_handler)
+        listener.start()
 
     
     def update(self, observable: IObservable, alert: Alert) -> None:
@@ -60,9 +85,8 @@ class Alerting(IObserver):
             The Alert to be printed.
         """
         
-        print(f"ALERT: {alert.msg}. Source: {alert.source}")
-        if self.logging:
-            f = open("alerting/log.txt", "a", encoding="utf-8")
-            f.write(f"ALERT: {alert.msg}. Source: {alert.source}")
-            f.write("\n")
-            f.close()
+        log_string = f"ALERT: {alert.msg}. Source: {alert.source}"
+        if self.logging_mode:
+            self.logger.warning(log_string)
+            # Workaround logging bug
+            time.sleep(0.00000000001)

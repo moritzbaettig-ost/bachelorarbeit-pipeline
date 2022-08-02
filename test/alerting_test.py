@@ -28,4 +28,6 @@ class TestObservable(IObservable):
 o = TestObservable()
 a = Alerting(True)
 o.attach(a)
-o.notify(Alert("test message", "test source"))
+for i in range(20):
+    o.notify(Alert(f"test message {i}", "test source"))
+    
