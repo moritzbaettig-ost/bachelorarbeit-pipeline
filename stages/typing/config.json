@@ -4,20 +4,20 @@
             "methods": [
                 "GET"
             ],
-            "path": "/"
+            "path": "/vulnbank/online/history.php"
         },
         {
             "methods": [
                 "GET"
             ],
-            "path": "/index.html"
+            "path": "/vulnbank/online/transactions.php"
         },
         {
             "methods": [
                 "GET",
                 "POST"
             ],
-            "path": "/var/www/endpoint1"
+            "path": "/vulnbank/online/api.php"
         }
     ]
 }
