@@ -1,12 +1,11 @@
 import copy
 import warnings
 import random
-
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import silhouette_score, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.metrics import silhouette_score, ConfusionMatrixDisplay
 from sklearn.model_selection import learning_curve, train_test_split
 from sklearn.model_selection import ShuffleSplit
 import ZODB, ZODB.FileStorage, ZODB.DB
@@ -17,7 +16,23 @@ from gap_statistic import OptimalK
 
 
 class HelperDataClass:
+    """
+    The HelperDataClass contains the connection to the Database.
+
+    Attributes
+    ----------
+        db: ZODB
+            Contains the reference to th ZODB Database
+        data: pandas DataFrame
+            Contains all Data from the Database in a Pandas DataFrame
+    """
+
     def __init__(self):
+        """
+        Initial method with basic attributes
+        """
+
+        # Connection to the ZODB
         storage = ZODB.FileStorage.FileStorage('db.fs')
         self.db = ZODB.DB(storage)
         connection = self.db.open()
@@ -27,6 +42,7 @@ class HelperDataClass:
         if "data" in root:
             # Copy the object from the database
             obj = copy.deepcopy(root["data"])
+            # Store Data From the Database in Dataframe
             self.data = pd.DataFrame(dict(obj).values())
         else:
             # Return False if the object does not exist in the database
@@ -35,7 +51,28 @@ class HelperDataClass:
 
 
 class HelperLogRegressionPerfAnalytics:
+    """
+    Class to Analyse the Logistic Regression Performance
+
+    Attributes
+    ----------
+        helperData: HelperDataClass
+            Contains a reference to the HelperDataClass
+
+    Methods
+    ----------
+        plot_learning_curve()
+            Returns a Plot of the Learning Curve from a ML Modell
+        evaluate_log_Regression()
+            This Function evaluates the Score of a Logistic Regression Model
+        get_conf_matrix
+            This Function returns two Plots. One of the Confusion Matrix and an other of the normalized confusin Matrix.
+    """
+
     def __init__(self, helperData: HelperDataClass):
+        """
+        Initial method with basic attributes
+        """
         self.helperData = helperData
 
     def plot_learning_curve(self, estimator, title, X, y, axes=None, ylim=None, cv=None, n_jobs=None,
@@ -60,9 +97,6 @@ class HelperLogRegressionPerfAnalytics:
         y : array-like of shape (n_samples) or (n_samples, n_features)
             Target relative to ``X`` for classification or regression;
             None for unsupervised learning.
-
-        axes : array-like of shape (3,), default=None
-            Axes to use for plotting the curves.
 
         ylim : tuple of shape (2,), default=None
             Defines minimum and maximum y-values plotted, e.g. (ymin, ymax).
@@ -116,8 +150,6 @@ class HelperLogRegressionPerfAnalytics:
         train_scores_std = np.std(train_scores, axis=1)
         test_scores_mean = np.mean(test_scores, axis=1)
         test_scores_std = np.std(test_scores, axis=1)
-        fit_times_mean = np.mean(fit_times, axis=1)
-        fit_times_std = np.std(fit_times, axis=1)
 
         # Plot learning curve
         plt.grid()
@@ -142,77 +174,58 @@ class HelperLogRegressionPerfAnalytics:
             train_sizes, test_scores_mean, "o-", color="g", label="Cross-validation score"
         )
         plt.legend(loc="best")
-
-        """
-        # Plot n_samples vs fit_times
-        axes[1].grid()
-        axes[1].plot(train_sizes, fit_times_mean, "o-")
-        axes[1].fill_between(
-            train_sizes,
-            fit_times_mean - fit_times_std,
-            fit_times_mean + fit_times_std,
-            alpha=0.1,
-        )
-        axes[1].set_xlabel("Training examples")
-        axes[1].set_ylabel("fit_times")
-        axes[1].set_title("Scalability of the model")
-
-        # Plot fit_time vs score
-        fit_time_argsort = fit_times_mean.argsort()
-        fit_time_sorted = fit_times_mean[fit_time_argsort]
-        test_scores_mean_sorted = test_scores_mean[fit_time_argsort]
-        test_scores_std_sorted = test_scores_std[fit_time_argsort]
-        axes[2].grid()
-        axes[2].plot(fit_time_sorted, test_scores_mean_sorted, "o-")
-        axes[2].fill_between(
-            fit_time_sorted,
-            test_scores_mean_sorted - test_scores_std_sorted,
-            test_scores_mean_sorted + test_scores_std_sorted,
-            alpha=0.1,
-        )
-        axes[2].set_xlabel("fit_times")
-        axes[2].set_ylabel("Score")
-        axes[2].set_title("Performance of the model")
-        """
         return plt
 
-        # Plot
-
     def evaluate_log_Regression(self):
+        """
+        This Function evaluates the Score of an ML-Modell and calls the plot_learning_curve Function
+        """
+
+        # Get a list of unique Types
         num_of_types = self.helperData.data['type'].unique()
         num_of_plots = 0
         types = []
+
         for t in num_of_types:
-            if len(self.helperData.data.loc[self.helperData.data['type'] == t])>200:
-                num_of_plots = num_of_plots +1
+            # Check if enough data is available for the Model
+            if len(self.helperData.data.loc[self.helperData.data['type'] == t]) > 200:
+                num_of_plots = num_of_plots + 1
                 types.append(t)
 
-        #fig, axes = plt.subplots(1, num_of_plots, figsize=(5 * num_of_plots, 15))
         for type in types:
+            # Get Feature Data
             X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
+            # Get Labels
             y = self.helperData.data.loc[self.helperData.data['type'] == type]['label']
             title = "Learning Curves\n" + type.path
             # Cross validation with 50 iterations to get smoother mean test and train
             # score curves, each time with 20% data randomly selected as a validation set.
             cv = ShuffleSplit(n_splits=50, test_size=0.2, random_state=0)
             estimator = Pipeline([('scaler', StandardScaler()), ('lr', LogisticRegression(random_state=0))])
+            # Parse Dict to Dataframe
             features = pd.DataFrame(dict(X).values())
+            # Plot the Learning Curve for the Data
             self.plot_learning_curve(estimator, title, features, y, ylim=(0.7, 1.01), cv=cv, n_jobs=4)
         plt.show()
 
     def get_conf_matrix(self):
+        """
+        This Function plots the Confusion Matrix in absolute and normalized values
+        """
+
         for type in self.helperData.data['type'].unique():
+            # Choose a specific Type
             if type.path == '/vulnbank/online/api.php':
+                # Get Feature Data Fram PD DataFrame
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
+                # Parse dict Values to DataFrame
                 X = pd.DataFrame(dict(X).values())
+                # Get Labels
                 y = self.helperData.data.loc[self.helperData.data['type'] == type]['label']
                 y = pd.DataFrame(dict(y).values())
-                print(len(X))
-                print(len(y))
                 # Split the data into a training set and a test set
                 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=22)
-                model  = Pipeline([('scaler', StandardScaler()), ('lr', LogisticRegression(random_state=0))])
-                print(X_train)
+                model = Pipeline([('scaler', StandardScaler()), ('lr', LogisticRegression(random_state=0))])
                 model.fit(X_train, y_train)
 
                 np.set_printoptions(precision=2)
@@ -232,30 +245,59 @@ class HelperLogRegressionPerfAnalytics:
                     )
                     disp.ax_.set_title(title)
 
-                    print(title)
-                    print(disp.confusion_matrix)
-
                 plt.show()
 
 
 class HelperKMeansPerfAnalytics:
+    """
+    The HelperKMeansPerfAnalytics Class analyzes the Performance and number of Clusters for the KMeans Algorithms
+
+    Attributes
+    ----------
+    helperData: HelperDataClass
+        Contains a reference to the HelperDataClass
+
+    Methods
+    ----------
+    eval_num_of_cluster()
+        Plots the SSE, SS and Gap-Stat Graph for the given Number of Clusters
+    KMeans_clustering_func()
+        Helper Function for the Gap-Stat Method
+    guete_function()
+        Plots the Graph for the Gütefunktion of the Clusters
+    """
+
     def __init__(self, helperData: HelperDataClass):
+        """
+        Initial method with basic attributes
+        """
         self.helperData = helperData
 
     def eval_num_of_cluster(self):
+        """
+        This Function Plots the SSE, SS and Gap-Stat Function
+        """
+
+        # Read Unique Type from Database
         for type in self.helperData.data['type'].unique():
+            # Set a specific Path
             if type.path == '/vulnbank/online/api.php':
+                # Get Features from Dataframe
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
+                # Parse Dict to DataFrame
                 X = pd.DataFrame(dict(X).values())
+                #Normalize the Data
                 scaler = StandardScaler()
                 scaler.fit(X)
                 X = scaler.transform(X)
+
+                # Get Labels from Dataframe
                 cluster_labels = self.helperData.data.loc[self.helperData.data['type'] == type]['label']
                 clusters = 15
                 elbow = []
                 ss = []
+                # For different number of cluster
                 for n_clusters in range(2, clusters):
-                    print(n_clusters)
                     # iterating through cluster sizes
                     clusterer = KMeans(n_clusters=n_clusters, init='random', n_init=10, max_iter=300, tol=1e-04,
                                        random_state=0)
@@ -328,16 +370,26 @@ class HelperKMeansPerfAnalytics:
         return m.cluster_centers_, m.predict(X)
 
     def guete_function(self):
+        """
+        This function calculates the Gütefunktion from the ML-Modell
+        """
+        # For ech Type
         for type in self.helperData.data['type'].unique():
+            # Choose a specific Backend
             if type.path == '/vulnbank/online/api.php':
+                # Get Features from Dataframe
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
+                # Parse Features to DataFrame
                 X = pd.DataFrame(dict(X).values())
+                # Normalize the Data
                 scaler = StandardScaler()
                 scaler.fit(X)
                 X = scaler.transform(X)
+                # Get the Labels
                 cluster_labels = self.helperData.data.loc[self.helperData.data['type'] == type]['label']
                 cluster_labels = cluster_labels.copy()
 
+                # Remove specific Number of Labels
                 modify_percentage = 0.6
                 num_of_loops = len(cluster_labels) * modify_percentage
 
@@ -365,11 +417,10 @@ class HelperKMeansPerfAnalytics:
                         attackLabel = len(df.loc[(df['n_cluster_' + str(n_clusters)] == i) & (df['label'] == 1)])
                         noAttackLabel = len(df.loc[(df['n_cluster_' + str(n_clusters)] == i) & (df['label'] == 0)])
                         num_of_datapoints = len(df.loc[(df['n_cluster_' + str(n_clusters)] == i)])
-                        local_guete.append(abs(attackLabel-noAttackLabel)/num_of_datapoints)
+                        local_guete.append(abs(attackLabel - noAttackLabel) / num_of_datapoints)
 
-                    guete.append(sum(local_guete)/len(local_guete))
+                    guete.append(sum(local_guete) / len(local_guete))
                     local_guete = []
-
 
                 plt.figure(figsize=(7, 7))
                 n_clusters = 6
