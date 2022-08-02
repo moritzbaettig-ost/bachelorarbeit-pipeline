@@ -57,7 +57,6 @@ class Typing(Stage, IObservable):
         self.root = RootNode(datetime.now())
         self.init_core()
         self._observers = []
-        print(self.get_path_reliabilities())
 
 
     def init_core(self) -> None:
@@ -107,7 +106,7 @@ class Typing(Stage, IObservable):
     
     def _get_path_reliability_rec(self, node: 'INode', path_reliabilities: list) -> float:
         if isinstance(node, ResourceNode):
-            path_reliabilities.append(node.path_reliability)
+            path_reliabilities.append((node.name, node.path_reliability))
         elif isinstance(node, DirNode):
             for child_node in node.children:
                 self._get_path_reliability_rec(child_node, path_reliabilities)
@@ -137,8 +136,8 @@ class Typing(Stage, IObservable):
         path_reliability = dir_node.path_reliability
 
         # TODO: Throw alert if Path Reliability is under specific value
-        RELIABILITY_THRESHOLD = 0.2
-        print(path_reliability)
+        RELIABILITY_THRESHOLD = 0.0
+        #print(path_reliability)
         if path_reliability < RELIABILITY_THRESHOLD:
             alert = Alert(msg=f"Path unreliable ({path_reliability})", source="Typing Stage")
             self.notify(alert)
