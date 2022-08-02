@@ -1,19 +1,19 @@
 import copy
 import warnings
+import random
 
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import silhouette_score
-from sklearn.model_selection import learning_curve
+from sklearn.metrics import silhouette_score, confusion_matrix, ConfusionMatrixDisplay
+from sklearn.model_selection import learning_curve, train_test_split
 from sklearn.model_selection import ShuffleSplit
 import ZODB, ZODB.FileStorage, ZODB.DB
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from gap_statistic import OptimalK
-
 
 
 class HelperDataClass:
@@ -35,8 +35,8 @@ class HelperDataClass:
 
 
 class HelperLogRegressionPerfAnalytics:
-    def __init__(self):
-        self.helperData = HelperDataClass()
+    def __init__(self, helperData: HelperDataClass):
+        self.helperData = helperData
 
     def plot_learning_curve(self, estimator, title, X, y, axes=None, ylim=None, cv=None, n_jobs=None,
                             train_sizes=np.linspace(0.1, 1.0, 5)):
@@ -99,16 +99,19 @@ class HelperLogRegressionPerfAnalytics:
             to be big enough to contain at least one sample from each class.
             (default: np.linspace(0.1, 1.0, 5))
         """
+
         if axes is None:
-            _, axes = plt.subplots(1, 3, figsize=(20, 5))
+            _, axes = plt.subplots(figsize=(20, 5))
 
-        axes[0].set_title(title)
+        plt.title(title)
         if ylim is not None:
-            axes[0].set_ylim(*ylim)
-        axes[0].set_xlabel("Training examples")
-        axes[0].set_ylabel("Score")
+            plt.ylim(*ylim)
+        plt.xlabel("Training examples")
+        plt.ylabel("Score")
 
-        train_sizes, train_scores, test_scores, fit_times, _ = learning_curve(estimator,X,y,cv=cv,n_jobs=n_jobs,train_sizes=train_sizes,return_times=True)
+        train_sizes, train_scores, test_scores, fit_times, _ = learning_curve(estimator, X, y, cv=cv, n_jobs=n_jobs,
+                                                                              train_sizes=train_sizes,
+                                                                              return_times=True)
         train_scores_mean = np.mean(train_scores, axis=1)
         train_scores_std = np.std(train_scores, axis=1)
         test_scores_mean = np.mean(test_scores, axis=1)
@@ -117,29 +120,30 @@ class HelperLogRegressionPerfAnalytics:
         fit_times_std = np.std(fit_times, axis=1)
 
         # Plot learning curve
-        axes[0].grid()
-        axes[0].fill_between(
+        plt.grid()
+        plt.fill_between(
             train_sizes,
             train_scores_mean - train_scores_std,
             train_scores_mean + train_scores_std,
             alpha=0.1,
             color="r",
         )
-        axes[0].fill_between(
+        plt.fill_between(
             train_sizes,
             test_scores_mean - test_scores_std,
             test_scores_mean + test_scores_std,
             alpha=0.1,
             color="g",
         )
-        axes[0].plot(
+        plt.plot(
             train_sizes, train_scores_mean, "o-", color="r", label="Training score"
         )
-        axes[0].plot(
+        plt.plot(
             train_sizes, test_scores_mean, "o-", color="g", label="Cross-validation score"
         )
-        axes[0].legend(loc="best")
+        plt.legend(loc="best")
 
+        """
         # Plot n_samples vs fit_times
         axes[1].grid()
         axes[1].plot(train_sizes, fit_times_mean, "o-")
@@ -169,15 +173,22 @@ class HelperLogRegressionPerfAnalytics:
         axes[2].set_xlabel("fit_times")
         axes[2].set_ylabel("Score")
         axes[2].set_title("Performance of the model")
-
+        """
         return plt
 
         # Plot
+
     def evaluate_log_Regression(self):
-        num_of_plots = len(self.helperData.data['type'].unique())
-        fig, axes = plt.subplots(3, num_of_plots, figsize=(5*num_of_plots, 15))
-        i=0
-        for type in self.helperData.data['type'].unique():
+        num_of_types = self.helperData.data['type'].unique()
+        num_of_plots = 0
+        types = []
+        for t in num_of_types:
+            if len(self.helperData.data.loc[self.helperData.data['type'] == t])>200:
+                num_of_plots = num_of_plots +1
+                types.append(t)
+
+        #fig, axes = plt.subplots(1, num_of_plots, figsize=(5 * num_of_plots, 15))
+        for type in types:
             X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
             y = self.helperData.data.loc[self.helperData.data['type'] == type]['label']
             title = "Learning Curves\n" + type.path
@@ -186,13 +197,50 @@ class HelperLogRegressionPerfAnalytics:
             cv = ShuffleSplit(n_splits=50, test_size=0.2, random_state=0)
             estimator = Pipeline([('scaler', StandardScaler()), ('lr', LogisticRegression(random_state=0))])
             features = pd.DataFrame(dict(X).values())
-            self.plot_learning_curve(estimator, title, features, y, axes=axes[:, i], ylim=(0.7, 1.01), cv=cv, n_jobs=4)
-            i = i +1
+            self.plot_learning_curve(estimator, title, features, y, ylim=(0.7, 1.01), cv=cv, n_jobs=4)
         plt.show()
 
+    def get_conf_matrix(self):
+        for type in self.helperData.data['type'].unique():
+            if type.path == '/vulnbank/online/api.php':
+                X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
+                X = pd.DataFrame(dict(X).values())
+                y = self.helperData.data.loc[self.helperData.data['type'] == type]['label']
+                y = pd.DataFrame(dict(y).values())
+                print(len(X))
+                print(len(y))
+                # Split the data into a training set and a test set
+                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=22)
+                model  = Pipeline([('scaler', StandardScaler()), ('lr', LogisticRegression(random_state=0))])
+                print(X_train)
+                model.fit(X_train, y_train)
+
+                np.set_printoptions(precision=2)
+
+                # Plot non-normalized confusion matrix
+                titles_options = [
+                    ("Confusion matrix, without normalization", None),
+                    ("Normalized confusion matrix", "true"),
+                ]
+                for title, normalize in titles_options:
+                    disp = ConfusionMatrixDisplay.from_estimator(
+                        model,
+                        X_test,
+                        y_test,
+                        cmap=plt.cm.Blues,
+                        normalize=normalize,
+                    )
+                    disp.ax_.set_title(title)
+
+                    print(title)
+                    print(disp.confusion_matrix)
+
+                plt.show()
+
+
 class HelperKMeansPerfAnalytics:
-    def __init__(self):
-        self.helperData = HelperDataClass()
+    def __init__(self, helperData: HelperDataClass):
+        self.helperData = helperData
 
     def eval_num_of_cluster(self):
         for type in self.helperData.data['type'].unique():
@@ -206,17 +254,19 @@ class HelperKMeansPerfAnalytics:
                 clusters = 15
                 elbow = []
                 ss = []
-                for n_clusters in range(2,clusters):
+                for n_clusters in range(2, clusters):
                     print(n_clusters)
                     # iterating through cluster sizes
-                    clusterer = KMeans(n_clusters=n_clusters, init='random', n_init=10, max_iter=300, tol=1e-04, random_state=0)
+                    clusterer = KMeans(n_clusters=n_clusters, init='random', n_init=10, max_iter=300, tol=1e-04,
+                                       random_state=0)
                     cluster_labels = clusterer.fit_predict(X)
                     # Finding the average silhouette score
                     silhouette_avg = silhouette_score(X, cluster_labels)
                     ss.append(silhouette_avg)
                     print("For n_clusters =", n_clusters, "The average silhouette_score is :", silhouette_avg)
                     # Finding the average SSE"
-                    elbow.append(clusterer.inertia_)  # Inertia: Sum of distances of samples to their closest cluster center
+                    elbow.append(
+                        clusterer.inertia_)  # Inertia: Sum of distances of samples to their closest cluster center
 
                 # --------------------create a wrapper around OptimalK to extract cluster centers and cluster labels
                 optimalK = OptimalK(n_jobs=1, clusterer=self.KMeans_clustering_func)
@@ -233,7 +283,7 @@ class HelperKMeansPerfAnalytics:
                 fig.add_subplot(131)
                 plt.plot(range(2, clusters), elbow, 'b-', label='Sum of squared error')
                 plt.scatter(n_clusters,
-                           elbow[n_clusters-2], s=250, c='r')
+                            elbow[n_clusters - 2], s=250, c='r')
                 plt.grid(True)
                 plt.axvline(n_clusters, linestyle="--")
                 plt.title('SSE by Cluster Count')
@@ -242,7 +292,7 @@ class HelperKMeansPerfAnalytics:
                 plt.legend()
                 fig.add_subplot(132)
                 plt.plot(range(2, clusters), ss, 'b-', label='Silhouette Score')
-                plt.scatter(n_clusters, ss[n_clusters-2], s=250, c='r')
+                plt.scatter(n_clusters, ss[n_clusters - 2], s=250, c='r')
                 plt.grid(True)
                 plt.axvline(n_clusters, linestyle="--")
                 plt.title('SS by Cluster Count')
@@ -277,7 +327,68 @@ class HelperKMeansPerfAnalytics:
         # and the labels for each point.
         return m.cluster_centers_, m.predict(X)
 
-#logRegressionAnalytics = HelperLogRegressionPerfAnalytics()
-#logRegressionAnalytics.evaluate_log_Regression()
-kMeansAnalytics = HelperKMeansPerfAnalytics()
+    def guete_function(self):
+        for type in self.helperData.data['type'].unique():
+            if type.path == '/vulnbank/online/api.php':
+                X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
+                X = pd.DataFrame(dict(X).values())
+                scaler = StandardScaler()
+                scaler.fit(X)
+                X = scaler.transform(X)
+                cluster_labels = self.helperData.data.loc[self.helperData.data['type'] == type]['label']
+                cluster_labels = cluster_labels.copy()
+
+                modify_percentage = 0.6
+                num_of_loops = len(cluster_labels) * modify_percentage
+
+                while num_of_loops > 0:
+                    random_index = random.randint(0, len(cluster_labels) - 1)
+
+                    cluster_labels.iloc[random_index] = 2
+                    num_of_loops = num_of_loops - 1
+
+                clusters = 15
+                d = {'label': cluster_labels}
+                for n_clusters in range(2, clusters):
+                    # iterating through cluster sizes
+                    clusterer = KMeans(n_clusters=n_clusters, init='random', n_init=10, max_iter=300, tol=1e-04,
+                                       random_state=0)
+                    cluster_labels = clusterer.fit_predict(X)
+                    d['n_cluster_' + str(n_clusters)] = cluster_labels
+
+                df = pd.DataFrame(d)
+                local_guete = []
+                guete = []
+                for n_clusters in range(2, clusters):
+                    print("Clusters " + str(n_clusters))
+                    for i in range(n_clusters):
+                        attackLabel = len(df.loc[(df['n_cluster_' + str(n_clusters)] == i) & (df['label'] == 1)])
+                        noAttackLabel = len(df.loc[(df['n_cluster_' + str(n_clusters)] == i) & (df['label'] == 0)])
+                        num_of_datapoints = len(df.loc[(df['n_cluster_' + str(n_clusters)] == i)])
+                        local_guete.append(abs(attackLabel-noAttackLabel)/num_of_datapoints)
+
+                    guete.append(sum(local_guete)/len(local_guete))
+                    local_guete = []
+
+
+                plt.figure(figsize=(7, 7))
+                n_clusters = 6
+                plt.plot(range(2, clusters), guete, 'b-', label='Güte-Funktion')
+                plt.scatter(n_clusters,
+                            guete[n_clusters - 2], s=250, c='r')
+                plt.grid(True)
+                plt.axvline(n_clusters, linestyle="--")
+                plt.title('Güte-Funktion by Cluster Count')
+                plt.xlabel("Number of cluster")
+                plt.ylabel("Güte-Funktion")
+                plt.legend()
+                plt.show()
+
+
+helperData = HelperDataClass()
+logRegressionAnalytics = HelperLogRegressionPerfAnalytics(helperData)
+logRegressionAnalytics.evaluate_log_Regression()
+logRegressionAnalytics.get_conf_matrix()
+kMeansAnalytics = HelperKMeansPerfAnalytics(helperData)
 kMeansAnalytics.eval_num_of_cluster()
+kMeansAnalytics.guete_function()
