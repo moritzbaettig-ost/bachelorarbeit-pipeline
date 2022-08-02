@@ -14,6 +14,25 @@ class Pipeline:
     This class represents the Inversion of Control Container of the Pipeline structure.
     It creates all instances of the stages and passes all the references.
 
+    Attributes
+    ----------
+    host: str
+            The hostname of the service to be secured
+    mode: str
+        The mode of the pipeline (train or test)
+    logging: bool
+        States if file logging should be enabled
+    stage_model: Model
+        The model stage
+    stage_extraction: Extraction
+        The extraction stage
+    stage_typing: Typing
+        The typing stage
+    stage_filter: RequestFilter
+        The filter stage
+    stage_acquisition: Acquisition
+        The acquisition stage
+        
     Methods
     ----------
     init_pipeline()
@@ -21,6 +40,17 @@ class Pipeline:
     """
 
     def __init__(self, host: str, mode: str, logging: bool) -> None:
+        """
+        Parameters
+        ----------¨
+        host: str
+            The hostname of the service to be secured
+        mode: str
+            The mode of the pipeline (train or test)
+        logging: bool
+            States if file logging should be enabled
+        """
+
         self.host = host
         self.mode = mode
         self.logging = logging
