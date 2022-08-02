@@ -35,6 +35,8 @@ class Typing(Stage, IObservable):
         The method that gets called by the previous stage.
     init_core()
         Initializes the typing tree.
+    get_path_reliabilities()
+        Returns all the existing path reliabilies in the typing tree for analytics purposes.
     attach(observer)
         Attaches an observer to the observable.
     detach(observer)
@@ -43,7 +45,7 @@ class Typing(Stage, IObservable):
         Notify all observers about an alert.    
     """
 
-    def __init__(self, successor: 'Stage'):
+    def __init__(self, successor: 'Stage') -> None:
         """
         Parameters
         ----------
@@ -55,9 +57,10 @@ class Typing(Stage, IObservable):
         self.root = RootNode(datetime.now())
         self.init_core()
         self._observers = []
+        print(self.get_path_reliabilities())
 
 
-    def init_core(self):
+    def init_core(self) -> None:
         """
         Initializes the typing tree.
         """
@@ -72,6 +75,42 @@ class Typing(Stage, IObservable):
                 temp_path_list = copy.deepcopy(path_list)
                 self.root.add_child(temp_path_list, method, True)
         self.root.update_reliability()
+
+
+    def get_path_reliabilities(self) -> list:
+        """
+        Returns all the existing path reliabilies in the typing tree for analytics purposes.
+
+        Returns
+        ----------
+        list
+            All existing path reliabilities in the typing tree
+        """
+
+        path_reliabilities = []
+        for node in self.root.GET_nodes:
+            self._get_path_reliability_rec(node, path_reliabilities)
+        for node in self.root.POST_nodes:
+            self._get_path_reliability_rec(node, path_reliabilities)
+        for node in self.root.HEAD_nodes:
+            self._get_path_reliability_rec(node, path_reliabilities)
+        for node in self.root.PUT_nodes:
+            self._get_path_reliability_rec(node, path_reliabilities)
+        for node in self.root.DELETE_nodes:
+            self._get_path_reliability_rec(node, path_reliabilities)
+        for node in self.root.OPTIONS_nodes:
+            self._get_path_reliability_rec(node, path_reliabilities)
+        for node in self.root.PATCH_nodes:
+            self._get_path_reliability_rec(node, path_reliabilities)
+        return path_reliabilities
+
+    
+    def _get_path_reliability_rec(self, node: 'INode', path_reliabilities: list) -> float:
+        if isinstance(node, ResourceNode):
+            path_reliabilities.append(node.path_reliability)
+        elif isinstance(node, DirNode):
+            for child_node in node.children:
+                self._get_path_reliability_rec(child_node, path_reliabilities)
 
 
     def run(self, dto: DTO) -> None:
