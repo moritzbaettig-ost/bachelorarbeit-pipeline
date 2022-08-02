@@ -5,7 +5,6 @@ from logging.handlers import QueueHandler, QueueListener
 from alerting.IObservable import IObservable
 from alerting.IObserver import IObserver
 import queue
-import threading
 import time
 
 
