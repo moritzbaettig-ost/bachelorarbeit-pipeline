@@ -24,13 +24,29 @@ class Alert:
 class Alerting(IObserver):
     """
     A class that represents a concrete Observer and prints Alerts.
+
+    Attributes
+    ----------
+    logging: bool
+        States if logging is activated or not
     
     Methods
     ----------
     update(observable, alert)
         Gets called by an Observable and prints an Alert with a specific message
     """
+    
+    def __init__(self, logging: bool) -> None:
+        """
+        Parameters
+        ----------
+        logging: bool
+            States if logging is activated or not
+        """
 
+        self.logging = logging
+
+    
     def update(self, observable: IObservable, alert: Alert) -> None:
         """
         Gets called by an Observable and prints an Alert with a specific message.
@@ -45,7 +61,8 @@ class Alerting(IObserver):
         """
         
         print(f"ALERT: {alert.msg}. Source: {alert.source}")
-        f = open("alerting/log.txt", "a", encoding="utf-8")
-        f.write(f"ALERT: {alert.msg}. Source: {alert.source}")
-        f.write("\n")
-        f.close()
+        if self.logging:
+            f = open("alerting/log.txt", "a", encoding="utf-8")
+            f.write(f"ALERT: {alert.msg}. Source: {alert.source}")
+            f.write("\n")
+            f.close()

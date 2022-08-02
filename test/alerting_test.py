@@ -26,6 +26,6 @@ class TestObservable(IObservable):
             observer.update(self, alert)
 
 o = TestObservable()
-a = Alerting()
+a = Alerting(True)
 o.attach(a)
 o.notify(Alert("test message", "test source"))
