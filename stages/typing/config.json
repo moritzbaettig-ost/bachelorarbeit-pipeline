@@ -18,6 +18,30 @@
                 "POST"
             ],
             "path": "/vulnbank/online/api.php"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/vulnbank/online/userinfo.php"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/vulnbank/online/login.php"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/vulnbank/online/logout.php"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/robots.txt"
         }
     ]
 }
