@@ -62,13 +62,13 @@ class Pipeline:
             print("Logging activated")
 
         alerting_observer = Alerting(self.logging)
-        database_handler = DatabaseHandler()
+        self.database_handler = DatabaseHandler()
 
         # STAGE: Model
-        self.stage_model = Model(None, self.mode, database_handler)
+        self.stage_model = Model(None, self.mode, self.database_handler)
         self.stage_model.attach(alerting_observer)
         # STAGE: Extraction
-        self.stage_extraction = Extraction(self.stage_model, self.mode, self.logging, database_handler)
+        self.stage_extraction = Extraction(self.stage_model, self.mode, self.logging, self.database_handler)
         # STAGE: Typing
         self.stage_typing = Typing(self.stage_extraction)
         self.stage_typing.attach(alerting_observer)
