@@ -143,3 +143,4 @@ zeo.config
 test/db_test.py
 alerting/log.txt
 test/seq2seqDataset/path_reliabilities.txt
+test/httpDataset/path_reliabilities.txt
