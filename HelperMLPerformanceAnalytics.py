@@ -3,8 +3,10 @@ import warnings
 import random
 import numpy as np
 import matplotlib.pyplot as plt
+import sklearn
 from sklearn import metrics
 from sklearn.cluster import KMeans
+from sklearn.decomposition import PCA
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import silhouette_score, ConfusionMatrixDisplay
 from sklearn.model_selection import learning_curve, train_test_split
@@ -195,20 +197,21 @@ class HelperLogRegressionPerfAnalytics:
                 types.append(t)
 
         for type in types:
-            # Get Feature Data
-            X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
-            # Get Labels
-            y = self.helperData.data.loc[self.helperData.data['type'] == type]['label']
-            title = "Learning Curves\n" + type.path
-            # Cross validation with 50 iterations to get smoother mean test and train
-            # score curves, each time with 20% data randomly selected as a validation set.
-            cv = ShuffleSplit(n_splits=50, test_size=0.2, random_state=0)
-            estimator = Pipeline([('scaler', StandardScaler()), ('lr', LogisticRegression(random_state=0))])
-            # Parse Dict to Dataframe
-            features = pd.DataFrame(dict(X).values())
-            # Plot the Learning Curve for the Data
-            self.plot_learning_curve(estimator, title, features, y, ylim=(0.7, 1.01), cv=cv, n_jobs=4)
-        plt.show()
+            if type.path == '/vulnbank/online/api.php' and type.method == 'POST' and type.has_query==False:
+                # Get Feature Data
+                X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
+                # Get Labels
+                y = self.helperData.data.loc[self.helperData.data['type'] == type]['label']
+                title = "Learning Curves\n" + type.path
+                # Cross validation with 50 iterations to get smoother mean test and train
+                # score curves, each time with 20% data randomly selected as a validation set.
+                cv = ShuffleSplit(n_splits=50, test_size=0.2, random_state=0)
+                estimator = Pipeline([('scaler', StandardScaler()), ('lr', LogisticRegression(random_state=0))])
+                # Parse Dict to Dataframe
+                features = pd.DataFrame(dict(X).values())
+                # Plot the Learning Curve for the Data
+                self.plot_learning_curve(estimator, title, features, y, ylim=(0.7, 1.01), cv=cv, n_jobs=4)
+            plt.show()
 
     def get_conf_matrix(self):
         """
@@ -217,7 +220,7 @@ class HelperLogRegressionPerfAnalytics:
 
         for type in self.helperData.data['type'].unique():
             # Choose a specific Type
-            if type.path == '/vulnbank/online/api.php':
+            if type.path == '/vulnbank/online/api.php' and type.method == 'POST' and type.has_query==False:
                 # Get Feature Data Fram PD DataFrame
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
                 # Parse dict Values to DataFrame
@@ -228,6 +231,9 @@ class HelperLogRegressionPerfAnalytics:
                 # Split the data into a training set and a test set
                 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=22)
                 model = Pipeline([('scaler', StandardScaler()), ('lr', LogisticRegression(random_state=0))])
+                print(type)
+                print("Labels")
+                print(y_train)
                 model.fit(X_train, y_train)
 
                 np.set_printoptions(precision=2)
@@ -253,7 +259,7 @@ class HelperLogRegressionPerfAnalytics:
         # https://medium.com/geekculture/essential-guide-to-handle-outliers-for-your-logistic-regression-model-63c97690a84d
         for type in self.helperData.data['type'].unique():
             # Choose a specific Type
-            if type.path == '/vulnbank/online/api.php':
+            if type.path == '/vulnbank/online/api.php' and type.method == 'POST' and type.has_query==False:
                 # Get Feature Data Fram PD DataFrame
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
                 # Parse dict Values to DataFrame
@@ -272,16 +278,68 @@ class HelperLogRegressionPerfAnalytics:
                 dist = np.dot(X_train, weight_vector)
                 y_dist = dist * [-1 if x == 0 else 1 for x in list(y_train)]
                 # Choose 10 % quantil
-                val_under = np.percentile(y_dist, 10)
+                val_under = np.percentile(y_dist, 5)
                 # Choose 90 % quantil
-                val_upper = np.percentile(y_dist, 90)
+                val_upper = np.percentile(y_dist, 95)
 
                 sns.kdeplot(y_dist)
-                plt.axvline(val_under, linestyle="--")
-                plt.axvline(val_upper, linestyle="--")
+                #plt.axvline(val_under, linestyle="--")
+                #plt.axvline(val_upper, linestyle="--")
                 plt.xlabel("Distance * Y-class")
                 plt.title("Verteilung der Distanzen")
                 plt.grid()
+                plt.show()
+
+                # Fit the data to a logistic regression model.
+                pca = PCA(n_components=2)
+                pca.fit(X_train)
+                X_train = pd.DataFrame(pca.transform(X_train))
+                clf = sklearn.linear_model.LogisticRegression()
+                clf.fit(X_train, y_train)
+
+                # Retrieve the model parameters.
+                b = clf.intercept_[0]
+                w1, w2 = clf.coef_[0].T
+                # Calculate the intercept and gradient of the decision boundary.
+                c = -b / w2
+                m = -w1 / w2
+
+                X_attack =[]
+                X_no_attack = []
+                dist_outlier = []
+                i=0
+                y_train = np.array(y_train)
+                for x in X_train.to_numpy():
+                    if y_dist[i]<val_under or y_dist[i]>val_upper:
+                        dist_outlier.append(x)
+                    if y_train[i]==0:
+                        X_no_attack.append(x)
+                    else:
+                        X_attack.append(x)
+                    i = i+1
+                # Plot the data and the classification with the decision boundary.
+                xmin, xmax = -5, 6
+                ymin, ymax = -4, 4
+                xd = np.array([xmin, xmax])
+                yd = m * xd + c
+                plt.plot(xd, yd, 'k', lw=1, ls='--')
+                plt.fill_between(xd, yd, ymin, color='tab:blue', alpha=0.2)
+                plt.fill_between(xd, yd, ymax, color='tab:orange', alpha=0.2)
+
+                print("All detected Outliers")
+                print(np.array(dist_outlier)[:, 0])
+                print(np.array(dist_outlier)[:, 1])
+                print("All detected Outliers")
+                plt.scatter(np.array(X_no_attack)[:,0],np.array(X_no_attack)[:,1], s=8, alpha=0.5,label = 'NoAttack')
+                plt.scatter(np.array(X_attack)[:,0], np.array(X_attack)[:,1], s=8, alpha=0.5, label = 'Attack')
+                plt.scatter(np.array(dist_outlier)[:, 0], np.array(dist_outlier)[:, 1], s=20, facecolors='none', edgecolors='r', label='Leverage Point')
+                plt.legend()
+                plt.xlim(xmin, xmax)
+                plt.ylim(ymin, ymax)
+                plt.title("Decision Boundary after PCA")
+                plt.ylabel(r'$x_2$')
+                plt.xlabel(r'$x_1$')
+
                 plt.show()
 
 
@@ -318,7 +376,7 @@ class HelperKMeansPerfAnalytics:
         # Read Unique Type from Database
         for type in self.helperData.data['type'].unique():
             # Set a specific Path
-            if type.path == '/vulnbank/online/api.php':
+            if type.path == '/vulnbank/online/api.php' and type.method == 'POST' and type.has_query==False:
                 # Get Features from Dataframe
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
                 # Parse Dict to DataFrame
@@ -358,7 +416,7 @@ class HelperKMeansPerfAnalytics:
                 optimalK.gap_df[['n_clusters', 'gap_value']]
 
                 fig = plt.figure(figsize=(21, 7))
-                n_clusters = 6
+                n_clusters = 5
                 fig.add_subplot(131)
                 plt.plot(range(2, clusters), elbow, 'b-', label='Sum of squared error')
                 plt.scatter(n_clusters,
@@ -413,7 +471,7 @@ class HelperKMeansPerfAnalytics:
         # For ech Type
         for type in self.helperData.data['type'].unique():
             # Choose a specific Backend
-            if type.path == '/vulnbank/online/api.php':
+            if type.path == '/vulnbank/online/api.php' and type.method == 'POST' and type.has_query==False:
                 # Get Features from Dataframe
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
                 # Parse Features to DataFrame
@@ -460,7 +518,7 @@ class HelperKMeansPerfAnalytics:
                     local_guete = []
 
                 plt.figure(figsize=(7, 7))
-                n_clusters = 6
+                n_clusters = 5
                 plt.plot(range(2, clusters), guete, 'b-', label='Güte-Funktion')
                 plt.scatter(n_clusters,
                             guete[n_clusters - 2], s=250, c='r')
@@ -476,7 +534,7 @@ class HelperKMeansPerfAnalytics:
         # For ech Type
         for type in self.helperData.data['type'].unique():
             # Choose a specific Backend
-            if type.path == '/vulnbank/online/api.php':
+            if type.path == '/vulnbank/online/api.php' and type.method == 'POST' and type.has_query==False:
                 # Get Features from Dataframe
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
                 # Parse Features to DataFrame
