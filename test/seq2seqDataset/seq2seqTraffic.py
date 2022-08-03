@@ -67,13 +67,15 @@ def send_data(p: pipeline.Pipeline):
     time.sleep(5)
 
     script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
-    rel_path_train = "test_normal.txt"
-    rel_path_anomaly = "test_anomaly.txt"
+    rel_path_train = "vulnbank_train.txt"
+    rel_path_anomaly = "vulnbank_anomaly.txt"
     path_normal_data = os.path.join(script_dir, rel_path_train)
     path_anomaly_data = os.path.join(script_dir, rel_path_anomaly)
 
     http_requests_normal = get_requests_from_file(path_normal_data)
     http_requests_anomaly = get_requests_from_file(path_anomaly_data)
+    print(f"# of anomaly requests: {str(len(http_requests_anomaly))}")
+    print(f"# of normal requests: {str(len(http_requests_normal))}")
 
     try:
         print("Start sending requests")
