@@ -137,6 +137,7 @@ db.fs
 db.fs.index
 db.fs.lock
 db.fs.tmp
+db.fs.old
 db_tmp/
 zeo.config
 test/db_test.py
