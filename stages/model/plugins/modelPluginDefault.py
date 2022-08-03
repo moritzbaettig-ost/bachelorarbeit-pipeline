@@ -93,7 +93,7 @@ class Plugin(ModelPluginInterface):
         db_data = db_handler.read("data")
         db_handler.set_strategy(None)
         db_data = db_data.values()
-        print("Train_Model")
+        # print("Train_Model")
         db_data_actual_type = []
         count_attack = 0
         count_no_attack = 0
@@ -115,7 +115,8 @@ class Plugin(ModelPluginInterface):
             self.get_model(type).train_model(training_data, training_labels)
             db_handler.write(self.model_dict, "lr_model_dict")
         else:
-            print("Not enough Data available for " + type.path)
+            # print("Not enough Data available for " + type.path)
+            pass
 
     def predict(self, type: Type, predicting_data: dict) -> list:
         """
@@ -199,7 +200,7 @@ class LogisticRegressionClass:
             self.score = model.score(x_test_set, y_test_labels)
             self.model = model
             self.trained = True
-        print(self.score)
+        # print(self.score)
 
     def predict(self, predicting_data: list) -> list:
         """
