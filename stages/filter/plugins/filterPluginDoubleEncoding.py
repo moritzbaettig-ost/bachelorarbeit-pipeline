@@ -33,4 +33,9 @@ class Plugin(FilterPluginInterface):
             query2 = parser.unquote(query1)
             if(query1!=query2):
                 return (True, "Double Encoded Path Query detected", "Double Encoding Filter Plugin")
+        if message.body != '':
+            body1 = message.body
+            body2 = parser.unquote(body1)
+            if(body1 != body2):
+                return (True, "Double Encoded Body detected", "Double Encoding Filter Plugin")
         return (False, "", "Double Encoding Filter Plugin")
