@@ -505,6 +505,7 @@ class HelperKMeansPerfAnalytics:
 
                 df = pd.DataFrame(d)
                 local_guete = []
+                guete5 = []
                 guete = []
                 for n_clusters in range(2, clusters):
                     print("Clusters " + str(n_clusters))
@@ -515,6 +516,8 @@ class HelperKMeansPerfAnalytics:
                         local_guete.append(abs(attackLabel - noAttackLabel) / num_of_datapoints)
 
                     guete.append(sum(local_guete) / len(local_guete))
+                    if n_clusters == 5:
+                        guete5 = local_guete
                     local_guete = []
 
                 plt.figure(figsize=(7, 7))
@@ -529,6 +532,43 @@ class HelperKMeansPerfAnalytics:
                 plt.ylabel("Güte-Funktion")
                 plt.legend()
                 plt.show()
+
+                X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
+                # Parse dict Values to DataFrame
+                X = pd.DataFrame(dict(X).values())
+                # Get Labels
+                y = self.helperData.data.loc[self.helperData.data['type'] == type]['label']
+                y = pd.DataFrame(dict(y).values())
+                scaler = StandardScaler()
+                scaler.fit(X)
+                X = scaler.transform(X)
+
+                # Fit the data to a logistic regression model.
+                pca = PCA(n_components=2)
+                pca.fit(X)
+                X = pd.DataFrame(pca.transform(X))
+                X['label']=df['label']
+                X['cluster'] = df['n_cluster_5']
+
+                print("Güte Cluster Analyse")
+                val_under = np.percentile(guete5, 30)
+                cluster = 0.0
+                for i in range(0,4):
+                    if guete5[i]<=val_under:
+                        cluster = float(i)+1
+
+                print(cluster)
+
+
+                plt.scatter(X.loc[X['cluster'] != cluster][0], X.loc[X['cluster'] != cluster][1], label='Other Data', facecolors='b')
+                plt.scatter(X.loc[(X['cluster'] == cluster) & (X['label'] == 0)][0], X.loc[(X['cluster'] == cluster) & (X['label'] == 0)][1], label='Normal Data in ' + str(i) + 'rd cluster', facecolors='g')
+                plt.scatter(X.loc[(X['cluster'] == cluster) & (X['label'] == 1)][0], X.loc[(X['cluster'] == cluster) & (X['label'] == 1)][1], label='Anomaly Data in ' + str(i) + 'rd cluster',color='orange')
+                plt.scatter(X.loc[(X['cluster'] == cluster) & (X['label'] == 2)][0], X.loc[(X['cluster'] == cluster) & (X['label'] == 2)][1], s=20, facecolors='none', edgecolors='r', label='NoLabel Data in ' + str(i) + 'rd cluster')
+                plt.title("Gütefunktion: Datenpunkte, die klassifiziert werden sollten")
+                plt.legend()
+                plt.show()
+
+
 
     def score_cluster(self, true=None):
         # For ech Type
