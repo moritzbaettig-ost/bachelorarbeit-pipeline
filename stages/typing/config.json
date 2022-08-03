@@ -4,50 +4,38 @@
             "methods": [
                 "GET"
             ],
-            "path": "/vulnbank/online/history.php"
+            "path": "/tienda1/miembros/imagenes/zarauz.jpg"
         },
         {
             "methods": [
                 "GET"
             ],
-            "path": "/vulnbank/online/transactions.php"
+            "path": "/tienda1/miembros/imagenes/castro.jpg"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/tienda1/miembros/imagenes/ogono.jpg"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/tienda1/index.jsp"
         },
         {
             "methods": [
                 "GET",
                 "POST"
             ],
-            "path": "/vulnbank/online/api.php"
+            "path": "/tienda1/miembros/editar.jsp"
         },
         {
             "methods": [
                 "GET"
             ],
-            "path": "/vulnbank/online/userinfo.php"
-        },
-        {
-            "methods": [
-                "GET"
-            ],
-            "path": "/vulnbank/online/login.php"
-        },
-        {
-            "methods": [
-                "GET"
-            ],
-            "path": "/vulnbank/online/logout.php"
-        },
-        {
-            "methods": [
-                "GET"
-            ],
-            "path": "/robots.txt"
-        },
-        {
-            "methods": [
-                "GET"
-            ],
-            "path": "/vulnbank/index.html"
+            "path": "/tienda1/miembros/salir.jsp"
         }
     ]
 }
