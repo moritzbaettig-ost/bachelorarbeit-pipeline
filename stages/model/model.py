@@ -8,6 +8,7 @@ from alerting.alert import Alert
 import sys
 import os
 import importlib
+import inspect
 
 
 class ModelPluginInterface:
@@ -136,8 +137,9 @@ class Model(Stage, IObservable):
             if ml_model_result[0] > 0:
                 print("Attack")
                 # Create an Alert
-                alert = Alert(msg=f"Attack detected with accuracy({ml_model_result[1]})", source="Model Stage")
+                alert = Alert(msg=f"Attack detected with accuracy({ml_model_result[1]})", source=f"Model Stage Plugin {(inspect.getfile(plugin.__class__)).split('/')[-1]}")
                 self.notify(alert)
+                return
             pass
 
     def attach(self, observer: IObserver) -> None:
