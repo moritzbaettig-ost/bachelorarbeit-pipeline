@@ -412,6 +412,7 @@ def measure():
     print("Mean time: "+str(sum(time_ids)/len(time_ids)))
     print(f"Total time: {t4 - t3:0.4f}")
 
+"""
 TRAIN_NORMAL_TRAFFIC = False
 
 if TRAIN_NORMAL_TRAFFIC:
@@ -419,7 +420,8 @@ if TRAIN_NORMAL_TRAFFIC:
     simulate_moving()
 else:
     simulate_moving_attack()
+"""
 #simulate_snap()
 #simulate_post()
 
-#measure()
+measure()

@@ -8,6 +8,7 @@ from alerting.alert import Alert
 import sys
 import os
 import importlib
+import inspect
 
 
 class ModelPluginInterface:
@@ -128,16 +129,17 @@ class Model(Stage, IObservable):
             # If the Pipeline is started in the training mode, the ML-Model must be actualised
             if self.mode == 'train':
                 plugin.train_model(dto.type, self.db_handler)
-            print("Prediction")
+            # print("Prediction")
             # Get the result from the ml-model
             ml_model_result = plugin.predict(dto.type, dto.features)
-            print(ml_model_result)
+            # print(ml_model_result)
             # Check if the model predicts an attack
             if ml_model_result[0] > 0:
-                print("Attack")
+                # print("Attack")
                 # Create an Alert
-                alert = Alert(msg=f"Attack detected with accuracy({ml_model_result[1]})", source="Model Stage")
+                alert = Alert(msg=f"Attack detected with accuracy({ml_model_result[1]})", source=f"Model Stage Plugin {(inspect.getfile(plugin.__class__)).split('/')[-1]}")
                 self.notify(alert)
+                return
             pass
 
     def attach(self, observer: IObserver) -> None:

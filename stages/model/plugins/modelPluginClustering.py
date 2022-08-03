@@ -113,7 +113,8 @@ class Plugin(ModelPluginInterface):
             self.get_model(type).train_model(training_data, training_labels)
             db_handler.write(self.model_dict, "kMeans_model_dict")
         else:
-            print("Not enough Data available for " + type.path)
+            # print("Not enough Data available for " + type.path)
+            pass
 
     def predict(self, type: Type, predicting_data: dict) -> list:
         """
@@ -166,7 +167,7 @@ class KMeansClass:
         """
 
         # Empty ML-Model
-        print("KMeanClass Created")
+        # print("KMeanClass Created")
         # Number of clusters
         self.num_of_clusters = 6
         self.model = Pipeline([('scaler', StandardScaler()), ('KMeans', KMeans(
@@ -211,8 +212,8 @@ class KMeansClass:
         for i in range(self.num_of_clusters):
             if clusters[i][0] < clusters[i][1]:
                 self.alert_clusters.append(i)
-        print("Alert_Clusters")
-        print(self.alert_clusters)
+        # print("Alert_Clusters")
+        # print(self.alert_clusters)
 
         self.trained = True
         self.model = model
@@ -232,10 +233,10 @@ class KMeansClass:
             Returns a list of the pattern [attack (1)/no attack(0), probability of the attack]
         """
         # Check if the model is trained
-        print("Cluster Prediction")
+        # print("Cluster Prediction")
         if self.trained:
             # Predict and return the result and accuracy
-            print("Cluster")
+            # print("Cluster")
             df_predicting_data = pd.DataFrame([predicting_data])
             if self.model.predict(df_predicting_data)[0] in self.alert_clusters:
                 return [1, 1]

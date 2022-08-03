@@ -408,4 +408,5 @@ class DatabaseHandler:
             if not self.maintenance_mode:
                 item = self.queue.get()
                 item["worker_method"](item)
+                self.db.pack()
                 self.queue.task_done()

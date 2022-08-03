@@ -4,20 +4,50 @@
             "methods": [
                 "GET"
             ],
-            "path": "/"
+            "path": "/vulnbank/online/history.php"
         },
         {
             "methods": [
                 "GET"
             ],
-            "path": "/index.html"
+            "path": "/vulnbank/online/transactions.php"
         },
         {
             "methods": [
                 "GET",
                 "POST"
             ],
-            "path": "/var/www/endpoint1"
+            "path": "/vulnbank/online/api.php"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/vulnbank/online/userinfo.php"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/vulnbank/online/login.php"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/vulnbank/online/logout.php"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/robots.txt"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/vulnbank/index.html"
         }
     ]
 }
