@@ -42,6 +42,12 @@
                 "GET"
             ],
             "path": "/robots.txt"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/vulnbank/index.html"
         }
     ]
 }
