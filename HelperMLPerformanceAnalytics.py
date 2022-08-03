@@ -3,6 +3,7 @@ import warnings
 import random
 import numpy as np
 import matplotlib.pyplot as plt
+from sklearn import metrics
 from sklearn.cluster import KMeans
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import silhouette_score, ConfusionMatrixDisplay
@@ -13,6 +14,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 from gap_statistic import OptimalK
+import seaborn as sns
 
 
 class HelperDataClass:
@@ -135,7 +137,7 @@ class HelperLogRegressionPerfAnalytics:
         """
 
         if axes is None:
-            _, axes = plt.subplots(figsize=(20, 5))
+            _, axes = plt.subplots(figsize=(10, 10))
 
         plt.title(title)
         if ylim is not None:
@@ -245,6 +247,41 @@ class HelperLogRegressionPerfAnalytics:
                     )
                     disp.ax_.set_title(title)
 
+                plt.show()
+
+    def get_distance_distribution(self):
+        # https://medium.com/geekculture/essential-guide-to-handle-outliers-for-your-logistic-regression-model-63c97690a84d
+        for type in self.helperData.data['type'].unique():
+            # Choose a specific Type
+            if type.path == '/vulnbank/online/api.php':
+                # Get Feature Data Fram PD DataFrame
+                X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
+                # Parse dict Values to DataFrame
+                X = pd.DataFrame(dict(X).values())
+                # Get Labels
+                y = self.helperData.data.loc[self.helperData.data['type'] == type]['label']
+                y = pd.DataFrame(dict(y).values())
+                scaler = StandardScaler()
+                scaler.fit(X)
+                X = scaler.transform(X)
+                # Split the data into a training set and a test set
+                X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=22)
+                model = LogisticRegression(random_state=0)
+                model.fit(X_train, y_train)
+                weight_vector = list(model.coef_[0])
+                dist = np.dot(X_train, weight_vector)
+                y_dist = dist * [-1 if x == 0 else 1 for x in list(y_train)]
+                # Choose 10 % quantil
+                val_under = np.percentile(y_dist, 10)
+                # Choose 90 % quantil
+                val_upper = np.percentile(y_dist, 90)
+
+                sns.kdeplot(y_dist)
+                plt.axvline(val_under, linestyle="--")
+                plt.axvline(val_upper, linestyle="--")
+                plt.xlabel("Distance * Y-class")
+                plt.title("Verteilung der Distanzen")
+                plt.grid()
                 plt.show()
 
 
@@ -435,14 +472,97 @@ class HelperKMeansPerfAnalytics:
                 plt.legend()
                 plt.show()
 
-    def score_cluster(self):
-        pass
+    def score_cluster(self, true=None):
+        # For ech Type
+        for type in self.helperData.data['type'].unique():
+            # Choose a specific Backend
+            if type.path == '/vulnbank/online/api.php':
+                # Get Features from Dataframe
+                X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
+                # Parse Features to DataFrame
+                X = pd.DataFrame(dict(X).values())
+                # Normalize the Data
+                scaler = StandardScaler()
+                scaler.fit(X)
+                X = scaler.transform(X)
+                # Get the Labels
+                global_cluster_labels = self.helperData.data.loc[self.helperData.data['type'] == type]['label']
+                clusters = 15
+                d = {'label': global_cluster_labels}
+                TN = []
+                TP = []
+                FN = []
+                FP = []
+                for n_clusters in range(2, clusters):
+                    # iterating through cluster sizes
+                    clusterer = KMeans(n_clusters=n_clusters, init='random', n_init=10, max_iter=300, tol=1e-04,
+                                       random_state=0)
+                    cluster_labels_predicted = clusterer.fit_predict(X)
+                    # Predict for the test set
+                    df_training_data = pd.DataFrame()
+                    df_training_data = df_training_data.assign(predicted_cluster=clusterer.predict(X))
+                    df_training_data = df_training_data.assign(labels=global_cluster_labels)
+                    clusters = []
+                    for i in range(n_clusters):
+                        clusters.append([
+                            df_training_data[
+                                (df_training_data.labels < 1) & (df_training_data.predicted_cluster == i)].shape[0],
+                            df_training_data[
+                                (df_training_data.labels > 0) & (df_training_data.predicted_cluster == i)].shape[0]])
+
+                    self.alert_clusters = []
+                    for i in range(n_clusters):
+                        if clusters[i][0] < clusters[i][1]:
+                            self.alert_clusters.append(i)
+                    cluster_labels_predicted = cluster_labels_predicted.tolist()
+                    for l in range(0, len(cluster_labels_predicted)):
+                        if cluster_labels_predicted[l] in self.alert_clusters:
+                            cluster_labels_predicted[l] = 1
+                        else:
+                            cluster_labels_predicted[l] = 0
+
+                    d['n_cluster_' + str(n_clusters)] = cluster_labels_predicted
+                    print(global_cluster_labels.to_numpy())
+                    print(np.array(cluster_labels_predicted))
+                    tn, fp, fn, tp = metrics.confusion_matrix(global_cluster_labels.to_numpy(), np.array(cluster_labels_predicted),normalize='all').ravel()
+                    TN.append(tn)
+                    FP.append(fp)
+                    FN.append(fn)
+                    TP.append(tp)
+
+                df = pd.DataFrame(d)
+
+                fig, axs = plt.subplots(2,2,figsize=(10, 10))
+                n_clusters = 15
+                axs[0,0].plot(range(2, n_clusters), np.array(TP), 'b-')
+                axs[0,0].grid(True)
+                axs[0,0].set_title('True Positive')
+                axs[0,0].set_xlabel("Number of cluster")
+                axs[0,0].set_ylabel("True Positive in %")
+                axs[0,1].plot(range(2, n_clusters), np.array(FP), 'b-')
+                axs[0,1].grid(True)
+                axs[0,1].set_title('False Positive')
+                axs[0,1].set_xlabel("Number of cluster")
+                axs[0,1].set_ylabel("False Positive in %")
+                axs[1,0].plot(range(2, n_clusters), np.array(FN), 'b-')
+                axs[1,0].grid(True)
+                axs[1,0].set_title('False Negative')
+                axs[1,0].set_xlabel("Number of cluster")
+                axs[1,0].set_ylabel("False Negative in %")
+                axs[1,1].plot(range(2, n_clusters), np.array(TN), 'b-')
+                axs[1,1].grid(True)
+                axs[1,1].set_title('True Negative')
+                axs[1,1].set_xlabel("Number of cluster")
+                axs[1,1].set_ylabel("True Negative in %")
+                plt.show()
 
 
 helperData = HelperDataClass()
 logRegressionAnalytics = HelperLogRegressionPerfAnalytics(helperData)
 logRegressionAnalytics.evaluate_log_Regression()
 logRegressionAnalytics.get_conf_matrix()
+logRegressionAnalytics.get_distance_distribution()
 kMeansAnalytics = HelperKMeansPerfAnalytics(helperData)
+kMeansAnalytics.score_cluster()
 kMeansAnalytics.eval_num_of_cluster()
 kMeansAnalytics.guete_function()
