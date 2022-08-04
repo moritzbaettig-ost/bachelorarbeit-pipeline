@@ -1,6 +1,7 @@
+#%%
 from matplotlib import pyplot as plt
 
-infile = r"sec2secAlertsByStage.log"
+infile = r"httpAlertsByStage.log"
 with open(infile) as f:
     f = f.readlines()
 
@@ -14,12 +15,14 @@ for line in f:
         typingStage = typingStage + 1
     elif line.split(":")[4].find("Model") != -1:
         modelStage = modelStage + 1
+not_detected = 810
 
-print(filterStage)
-print(typingStage)
-print(modelStage)
 
-plt.pie([filterStage, typingStage, modelStage], labels=['Filter Stage', 'Typing Stage', 'Model Stage'], autopct='%1.1f%%',explode=(0.1,0.1,0.1))
+print("Filter Stage "+str(filterStage))
+print("Typing Stage "+str(typingStage))
+print("Model Stage "+str(modelStage))
+
+plt.pie([filterStage, typingStage, modelStage, not_detected], labels=['Filter Stage', 'Typing Stage', 'Model Stage', 'Not Detected'], autopct='%1.1f%%',explode=(0.1,0.1,0.1,0.1))
 plt.title("Alerts by Stage")
 plt.show()
     #stage.append(float(line.split(",")[2].split(":")[1].split("(")[1].split(")")[0]))

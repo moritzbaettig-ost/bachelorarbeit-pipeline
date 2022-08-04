@@ -1,18 +1,20 @@
+#%%
 from matplotlib import pyplot as plt
 
-infile = r"sec2sectreePerformance.log"
+infile = r"httpTreePerformance.log"
 with open(infile) as f:
     f = f.readlines()
 
 reliabilities = []
 for line in f:
-    reliabilities.append(float(line.split(",")[2].split(":")[1].split("(")[1].split(")")[0]))
+    if line.find("Filter") == -1:
+        reliabilities.append(float(line.split("(")[1].split(")")[0]))
 
 i = 1
 alerts = 0
 reliabilities_normalized = []
 for r in reliabilities:
-    if r <=0.2:
+    if r <=0.034482758620689655:
         alerts = alerts +1
     reliabilities_normalized.append(alerts/i)
     i=i+1
@@ -24,3 +26,4 @@ plt.xlabel("Requests")
 plt.ylabel("Normalized number of Pathalerts")
 plt.grid()
 plt.show()
+# %%
