@@ -136,7 +136,7 @@ class Typing(Stage, IObservable):
         path_reliability = dir_node.path_reliability
 
         # TODO: Throw alert if Path Reliability is under specific value
-        RELIABILITY_THRESHOLD = 0.034482758620689655
+        RELIABILITY_THRESHOLD = 0.004016064257028112
         #print(path_reliability)
         if path_reliability <= RELIABILITY_THRESHOLD:
             alert = Alert(msg=f"Path unreliable ({path_reliability})", source="Typing Stage")
