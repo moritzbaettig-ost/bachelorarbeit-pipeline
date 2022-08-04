@@ -128,6 +128,6 @@ def send_data(p: pipeline.Pipeline):
 
 
 if __name__ == '__main__':
-    p = pipeline.Pipeline("146.136.47.202", "test", False)
+    p = pipeline.Pipeline("", "test", True)
     t = threading.Thread(target=p.init_pipeline).start()
     send_data(p)
