@@ -1,3 +1,4 @@
+#%%
 import copy
 import warnings
 import random
@@ -52,6 +53,23 @@ class HelperDataClass:
             # Return False if the object does not exist in the database
             obj = False
         connection.close()
+        self.db.close()
+
+
+    def count_labels_per_type(self):
+        """
+        Counts the labels per type and prints a list for every type in the form [# normal, # anomaly]
+        """
+
+        counter_dict = {}
+        for index, row in self.data.iterrows():
+            if row["type"] not in counter_dict:
+                counter_dict[row["type"]] = [0, 0]
+            else:
+                counter_dict[row["type"]][row["label"]] += 1
+        for key, value in counter_dict.items():
+            print(key)
+            print(f"# of Requests in Data: {value}\n")
 
 
 class HelperLogRegressionPerfAnalytics:
@@ -197,7 +215,7 @@ class HelperLogRegressionPerfAnalytics:
                 types.append(t)
 
         for type in types:
-            if type.path == '/vulnbank/online/api.php' and type.method == 'POST' and type.has_query==False:
+            if type.path == '/tienda1/miembros/editar.jsp' and type.method == 'GET' and type.has_query==True and type.has_body==False:
                 # Get Feature Data
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
                 # Get Labels
@@ -210,7 +228,7 @@ class HelperLogRegressionPerfAnalytics:
                 # Parse Dict to Dataframe
                 features = pd.DataFrame(dict(X).values())
                 # Plot the Learning Curve for the Data
-                self.plot_learning_curve(estimator, title, features, y, ylim=(0.7, 1.01), cv=cv, n_jobs=4)
+                self.plot_learning_curve(estimator, title, features, y, ylim=(0.0, 1.01), cv=cv, n_jobs=4)
             plt.show()
 
     def get_conf_matrix(self):
@@ -220,7 +238,7 @@ class HelperLogRegressionPerfAnalytics:
 
         for type in self.helperData.data['type'].unique():
             # Choose a specific Type
-            if type.path == '/vulnbank/online/api.php' and type.method == 'POST' and type.has_query==False:
+            if type.path == '/tienda1/miembros/editar.jsp' and type.method == 'GET' and type.has_query==True and type.has_body==False:
                 # Get Feature Data Fram PD DataFrame
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
                 # Parse dict Values to DataFrame
@@ -259,7 +277,7 @@ class HelperLogRegressionPerfAnalytics:
         # https://medium.com/geekculture/essential-guide-to-handle-outliers-for-your-logistic-regression-model-63c97690a84d
         for type in self.helperData.data['type'].unique():
             # Choose a specific Type
-            if type.path == '/vulnbank/online/api.php' and type.method == 'POST' and type.has_query==False:
+            if type.path == '/tienda1/miembros/editar.jsp' and type.method == 'GET' and type.has_query==True and type.has_body==False:
                 # Get Feature Data Fram PD DataFrame
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
                 # Parse dict Values to DataFrame
@@ -376,7 +394,7 @@ class HelperKMeansPerfAnalytics:
         # Read Unique Type from Database
         for type in self.helperData.data['type'].unique():
             # Set a specific Path
-            if type.path == '/vulnbank/online/api.php' and type.method == 'POST' and type.has_query==False:
+            if type.path == '/tienda1/miembros/editar.jsp' and type.method == 'GET' and type.has_query==True and type.has_body==False:
                 # Get Features from Dataframe
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
                 # Parse Dict to DataFrame
@@ -416,7 +434,7 @@ class HelperKMeansPerfAnalytics:
                 optimalK.gap_df[['n_clusters', 'gap_value']]
 
                 fig = plt.figure(figsize=(21, 7))
-                n_clusters = 5
+                n_clusters = 6
                 fig.add_subplot(131)
                 plt.plot(range(2, clusters), elbow, 'b-', label='Sum of squared error')
                 plt.scatter(n_clusters,
@@ -471,7 +489,7 @@ class HelperKMeansPerfAnalytics:
         # For ech Type
         for type in self.helperData.data['type'].unique():
             # Choose a specific Backend
-            if type.path == '/vulnbank/online/api.php' and type.method == 'POST' and type.has_query==False:
+            if type.path == '/tienda1/miembros/editar.jsp' and type.method == 'GET' and type.has_query==True and type.has_body==False:
                 # Get Features from Dataframe
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
                 # Parse Features to DataFrame
@@ -521,7 +539,7 @@ class HelperKMeansPerfAnalytics:
                     local_guete = []
 
                 plt.figure(figsize=(7, 7))
-                n_clusters = 5
+                n_clusters = 6
                 plt.plot(range(2, clusters), guete, 'b-', label='Güte-Funktion')
                 plt.scatter(n_clusters,
                             guete[n_clusters - 2], s=250, c='r')
@@ -574,7 +592,7 @@ class HelperKMeansPerfAnalytics:
         # For ech Type
         for type in self.helperData.data['type'].unique():
             # Choose a specific Backend
-            if type.path == '/vulnbank/online/api.php' and type.method == 'POST' and type.has_query==False:
+            if type.path == '/tienda1/miembros/editar.jsp' and type.method == 'GET' and type.has_query==True and type.has_body==False:
                 # Get Features from Dataframe
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
                 # Parse Features to DataFrame
@@ -656,6 +674,7 @@ class HelperKMeansPerfAnalytics:
 
 
 helperData = HelperDataClass()
+#helperData.count_labels_per_type()
 logRegressionAnalytics = HelperLogRegressionPerfAnalytics(helperData)
 logRegressionAnalytics.evaluate_log_Regression()
 logRegressionAnalytics.get_conf_matrix()
@@ -664,3 +683,5 @@ kMeansAnalytics = HelperKMeansPerfAnalytics(helperData)
 kMeansAnalytics.score_cluster()
 kMeansAnalytics.eval_num_of_cluster()
 kMeansAnalytics.guete_function()
+
+# %%
