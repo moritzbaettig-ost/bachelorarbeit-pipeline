@@ -1,7 +1,7 @@
 #%%
 from matplotlib import pyplot as plt
 
-infile = r"httpTreePerformance.log"
+infile = r"honeypotTreePerformance.log"
 with open(infile) as f:
     f = f.readlines()
 
@@ -14,7 +14,7 @@ i = 1
 alerts = 0
 reliabilities_normalized = []
 for r in reliabilities:
-    if r <=0.034482758620689655:
+    if r <=0.004016064257028112:
         alerts = alerts +1
     reliabilities_normalized.append(alerts/i)
     i=i+1
