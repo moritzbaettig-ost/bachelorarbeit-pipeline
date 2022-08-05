@@ -91,17 +91,17 @@ class ExtractionPluginDefaultStrategy(DatabaseHandlerStrategy):
         connection = self.db.open()
         root = connection.root()
         if not root[name].has_key(type):
-            root[name].insert(type, {
-                    "monograms": persistent.list.PersistentList(),
-                    "bigrams": persistent.list.PersistentList(),
-                    "hexagrams": persistent.list.PersistentList()
-                })
-            transaction.commit()
-        res =  {
-            "monograms": list(root[name][type]["monograms"]),
-            "bigrams": list(root[name][type]["bigrams"]),
-            "hexagrams": list(root[name][type]["hexagrams"])
-        }
+            res =  {
+                "monograms": [],
+                "bigrams": [],
+                "hexagrams": []
+            }
+        else:
+            res =  {
+                "monograms": list(root[name][type]["monograms"]),
+                "bigrams": list(root[name][type]["bigrams"]),
+                "hexagrams": list(root[name][type]["hexagrams"])
+            }        
         connection.close()
         return res
 
@@ -119,6 +119,12 @@ class ExtractionPluginDefaultStrategy(DatabaseHandlerStrategy):
         connection = self.db.open()
         root = connection.root()
         obj = item["object"]
+        if not root[item["name"]].has_key(item["type"]):
+            root[item["name"]].insert(item["type"], {
+                "monograms": persistent.list.PersistentList(),
+                "bigrams": persistent.list.PersistentList(),
+                "hexagrams": persistent.list.PersistentList()
+            })
         (root[item["name"]].get(item["type"]))["monograms"].append(obj["monograms"])
         (root[item["name"]].get(item["type"]))["bigrams"].append(obj["bigrams"])
         (root[item["name"]].get(item["type"]))["hexagrams"].append(obj["hexagrams"])
