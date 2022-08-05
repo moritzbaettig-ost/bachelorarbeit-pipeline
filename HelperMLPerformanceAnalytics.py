@@ -46,9 +46,10 @@ class HelperDataClass:
         # Check if object exists in root namespace
         if "data" in root:
             # Copy the object from the database
-            obj = copy.deepcopy(root["data"])
+            obj = root["data"]
             # Store Data From the Database in Dataframe
             self.data = pd.DataFrame(dict(obj).values())
+            print(len(self.data))
         else:
             # Return False if the object does not exist in the database
             obj = False
@@ -215,7 +216,7 @@ class HelperLogRegressionPerfAnalytics:
                 types.append(t)
 
         for type in types:
-            if type.path == '/tienda1/miembros/editar.jsp' and type.method == 'GET' and type.has_query==True and type.has_body==False:
+            if type.path == '/web/cgi-bin/hi3510/ptzctrl.cgi' and type.method == 'GET' and type.has_query==True and type.has_body==False:
                 # Get Feature Data
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
                 # Get Labels
@@ -228,7 +229,7 @@ class HelperLogRegressionPerfAnalytics:
                 # Parse Dict to Dataframe
                 features = pd.DataFrame(dict(X).values())
                 # Plot the Learning Curve for the Data
-                self.plot_learning_curve(estimator, title, features, y, ylim=(0.0, 1.01), cv=cv, n_jobs=4)
+                self.plot_learning_curve(estimator, title, features, y, ylim=(0.7, 1.01), cv=cv, n_jobs=4)
             plt.show()
 
     def get_conf_matrix(self):
@@ -238,7 +239,7 @@ class HelperLogRegressionPerfAnalytics:
 
         for type in self.helperData.data['type'].unique():
             # Choose a specific Type
-            if type.path == '/tienda1/miembros/editar.jsp' and type.method == 'GET' and type.has_query==True and type.has_body==False:
+            if type.path == '/web/cgi-bin/hi3510/ptzctrl.cgi' and type.method == 'GET' and type.has_query==True and type.has_body==False:
                 # Get Feature Data Fram PD DataFrame
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
                 # Parse dict Values to DataFrame
@@ -277,7 +278,7 @@ class HelperLogRegressionPerfAnalytics:
         # https://medium.com/geekculture/essential-guide-to-handle-outliers-for-your-logistic-regression-model-63c97690a84d
         for type in self.helperData.data['type'].unique():
             # Choose a specific Type
-            if type.path == '/tienda1/miembros/editar.jsp' and type.method == 'GET' and type.has_query==True and type.has_body==False:
+            if type.path == '/web/cgi-bin/hi3510/ptzctrl.cgi' and type.method == 'GET' and type.has_query==True and type.has_body==False:
                 # Get Feature Data Fram PD DataFrame
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
                 # Parse dict Values to DataFrame
@@ -394,7 +395,7 @@ class HelperKMeansPerfAnalytics:
         # Read Unique Type from Database
         for type in self.helperData.data['type'].unique():
             # Set a specific Path
-            if type.path == '/tienda1/miembros/editar.jsp' and type.method == 'GET' and type.has_query==True and type.has_body==False:
+            if type.path == '/web/cgi-bin/hi3510/ptzctrl.cgi' and type.method == 'GET' and type.has_query==True and type.has_body==False:
                 # Get Features from Dataframe
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
                 # Parse Dict to DataFrame
@@ -434,7 +435,7 @@ class HelperKMeansPerfAnalytics:
                 optimalK.gap_df[['n_clusters', 'gap_value']]
 
                 fig = plt.figure(figsize=(21, 7))
-                n_clusters = 6
+                n_clusters = 8
                 fig.add_subplot(131)
                 plt.plot(range(2, clusters), elbow, 'b-', label='Sum of squared error')
                 plt.scatter(n_clusters,
@@ -489,7 +490,7 @@ class HelperKMeansPerfAnalytics:
         # For ech Type
         for type in self.helperData.data['type'].unique():
             # Choose a specific Backend
-            if type.path == '/tienda1/miembros/editar.jsp' and type.method == 'GET' and type.has_query==True and type.has_body==False:
+            if type.path == '/web/cgi-bin/hi3510/ptzctrl.cgi' and type.method == 'GET' and type.has_query==True and type.has_body==False:
                 # Get Features from Dataframe
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
                 # Parse Features to DataFrame
@@ -539,7 +540,7 @@ class HelperKMeansPerfAnalytics:
                     local_guete = []
 
                 plt.figure(figsize=(7, 7))
-                n_clusters = 6
+                n_clusters = 8
                 plt.plot(range(2, clusters), guete, 'b-', label='Güte-Funktion')
                 plt.scatter(n_clusters,
                             guete[n_clusters - 2], s=250, c='r')
@@ -592,7 +593,7 @@ class HelperKMeansPerfAnalytics:
         # For ech Type
         for type in self.helperData.data['type'].unique():
             # Choose a specific Backend
-            if type.path == '/tienda1/miembros/editar.jsp' and type.method == 'GET' and type.has_query==True and type.has_body==False:
+            if type.path == '/web/cgi-bin/hi3510/ptzctrl.cgi' and type.method == 'GET' and type.has_query==True and type.has_body==False:
                 # Get Features from Dataframe
                 X = self.helperData.data.loc[self.helperData.data['type'] == type]['features']
                 # Parse Features to DataFrame
@@ -603,7 +604,7 @@ class HelperKMeansPerfAnalytics:
                 X = scaler.transform(X)
                 # Get the Labels
                 global_cluster_labels = self.helperData.data.loc[self.helperData.data['type'] == type]['label']
-                clusters = 15
+                clusters = 25
                 d = {'label': global_cluster_labels}
                 TN = []
                 TP = []
@@ -649,7 +650,7 @@ class HelperKMeansPerfAnalytics:
                 df = pd.DataFrame(d)
 
                 fig, axs = plt.subplots(2,2,figsize=(10, 10))
-                n_clusters = 15
+                n_clusters = 25
                 axs[0,0].plot(range(2, n_clusters), np.array(TP), 'b-')
                 axs[0,0].grid(True)
                 axs[0,0].set_title('True Positive')
@@ -672,16 +673,16 @@ class HelperKMeansPerfAnalytics:
                 axs[1,1].set_ylabel("True Negative in %")
                 plt.show()
 
-
-helperData = HelperDataClass()
-#helperData.count_labels_per_type()
-logRegressionAnalytics = HelperLogRegressionPerfAnalytics(helperData)
-logRegressionAnalytics.evaluate_log_Regression()
-logRegressionAnalytics.get_conf_matrix()
-logRegressionAnalytics.get_distance_distribution()
-kMeansAnalytics = HelperKMeansPerfAnalytics(helperData)
-kMeansAnalytics.score_cluster()
-kMeansAnalytics.eval_num_of_cluster()
-kMeansAnalytics.guete_function()
+if __name__ == '__main__':
+    helperData = HelperDataClass()
+    #helperData.count_labels_per_type()
+    logRegressionAnalytics = HelperLogRegressionPerfAnalytics(helperData)
+    logRegressionAnalytics.evaluate_log_Regression()
+    logRegressionAnalytics.get_conf_matrix()
+    logRegressionAnalytics.get_distance_distribution()
+    kMeansAnalytics = HelperKMeansPerfAnalytics(helperData)
+    kMeansAnalytics.score_cluster()
+    kMeansAnalytics.eval_num_of_cluster()
+    kMeansAnalytics.guete_function()
 
 # %%
