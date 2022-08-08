@@ -57,7 +57,10 @@ class Pipeline:
 
 
     def init_pipeline(self):
-        print(f"Running pipeline with host {self.host} and mode {self.mode}")
+        print_host = self.host
+        if self.host == '':
+            print_host = 'NO BACKEND'
+        print(f"Running pipeline with host {print_host} and mode {self.mode}")
         if self.logging:
             print("Logging activated")
 

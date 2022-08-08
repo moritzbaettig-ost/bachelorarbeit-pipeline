@@ -4,38 +4,73 @@
             "methods": [
                 "GET"
             ],
-            "path": "/tienda1/miembros/imagenes/zarauz.jpg"
+            "path": "/web/tmpfs/snap.jpg"
         },
         {
             "methods": [
                 "GET"
             ],
-            "path": "/tienda1/miembros/imagenes/castro.jpg"
+            "path": "/cgi-bin/hi3510/param.cgi"
         },
         {
             "methods": [
                 "GET"
             ],
-            "path": "/tienda1/miembros/imagenes/ogono.jpg"
+            "path": "/"
         },
         {
             "methods": [
                 "GET"
             ],
-            "path": "/tienda1/index.jsp"
-        },
-        {
-            "methods": [
-                "GET",
-                "POST"
-            ],
-            "path": "/tienda1/miembros/editar.jsp"
+            "path": "/web/admin.html"
         },
         {
             "methods": [
                 "GET"
             ],
-            "path": "/tienda1/miembros/salir.jsp"
+            "path": "/web/cgi-bin/hi3510/param.cgi"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/web/mainpage.html"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/web/blank.html"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/cgi-bin/hi3510/ptzctrl.cgi"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/sitemap.xml"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/robots.txt"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/.well-known/security.txt"
+        },
+        {
+            "methods": [
+                "GET"
+            ],
+            "path": "/description.xml"
         }
     ]
 }

@@ -108,6 +108,9 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
         self.protocol_version = 'HTTP/1.1'
         self.hostname = hostname
         self.successor = successor
+        self.no_backend = False
+        if self.hostname == '':
+            self.no_backend = True
 
     def __call__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -131,27 +134,37 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
         """
 
         self.process_request('GET', '')
-        sent = False
-        try:
-            url = 'http://{}{}'.format(self.hostname, self.path)
-            # print(url)
-            req_header = self.parse_headers()
 
-            # print(req_header)
-            # print(self.headers)
-            # print(url)
-            resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
-            sent = True
+        if not self.no_backend:
+            sent = False
+            try:
+                url = 'http://{}{}'.format(self.hostname, self.path)
+                # print(url)
+                req_header = self.parse_headers()
 
-            self.send_response(resp.status_code)
-            self.send_resp_headers(resp)
-            msg = resp.text
-            if body:
-                self.wfile.write(msg.encode(encoding='UTF-8', errors='strict'))
+                # print(req_header)
+                # print(self.headers)
+                # print(url)
+                resp = requests.get(url, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
+                sent = True
+
+                self.send_response(resp.status_code)
+                self.send_resp_headers(resp)
+                msg = resp.text
+                if body:
+                    self.wfile.write(msg.encode(encoding='UTF-8', errors='strict'))
+                return
+            finally:
+                if not sent:
+                    self.send_error(404, 'error trying to proxy')
+        else:
+            self.send_response(200)
+            #self.send_header('Content-type', 'text/xml')
+            #self.send_header('Connection', 'Keep-Alive')
+            self.send_header('Content-Length', '0')
+            self.end_headers()
             return
-        finally:
-            if not sent:
-                self.send_error(404, 'error trying to proxy')
+        
 
     def do_POST(self, body=True):
         """
@@ -166,20 +179,30 @@ class ProxyHTTPRequestHandler(BaseHTTPRequestHandler):
         content_len = int(self.headers.get('content-length'))
         post_body = self.rfile.read(content_len)
         self.process_request('POST', post_body)
-        sent = False
-        try:
-            url = 'http://{}{}'.format(self.hostname, self.path)
-            req_header = self.parse_headers()
-            resp = requests.post(url, data=post_body, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
-            sent = True
-            self.send_response(resp.status_code)
-            self.send_resp_headers(resp)
-            if body:
-                self.wfile.write(resp.content)
+        
+        if not self.no_backend:
+            sent = False
+            try:
+                url = 'http://{}{}'.format(self.hostname, self.path)
+                req_header = self.parse_headers()
+                resp = requests.post(url, data=post_body, headers=self.merge_two_dicts(req_header, self.set_header()), verify=False)
+                sent = True
+                self.send_response(resp.status_code)
+                self.send_resp_headers(resp)
+                if body:
+                    self.wfile.write(resp.content)
+                return
+            finally:
+                if not sent:
+                    self.send_error(404, 'error trying to proxy')
+        else:
+            self.send_response(200)
+            #self.send_header('Content-type', 'text/xml')
+            #self.send_header('Connection', 'Keep-Alive')
+            self.send_header('Content-Length', '0')
+            self.end_headers()
             return
-        finally:
-            if not sent:
-                self.send_error(404, 'error trying to proxy')
+        
 
     def parse_headers(self):
         """
