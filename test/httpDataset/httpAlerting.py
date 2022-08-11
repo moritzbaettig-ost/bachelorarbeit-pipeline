@@ -10,7 +10,7 @@ import pipeline
 import threading
 import time
 import ZODB, ZODB.FileStorage, ZODB.DB
-from datetime import datetime
+import random
 
 HTTP_RE = re.compile(r"(.+?)\s\n\n", re.MULTILINE | re.DOTALL)
 HTTP_RE2 = re.compile(r"(.+?)\n\n(.+?)\n\n", re.MULTILINE | re.DOTALL)
@@ -83,12 +83,16 @@ def send_data(p: pipeline.Pipeline):
     path_data = os.path.join(script_dir, rel_path)
 
     http_requests = get_requests_from_file(path_data)
-    print(f"# of requests: {str(len(http_requests))}")
+    http_requests = random.sample(http_requests, 1000)
+
+    p.stage_extraction.label = 0
 
     try:
         print("Start sending requests")
         i = 1
         for req in http_requests:
+            if i == 500:
+                p.stage_extraction.label = 1
             my_method, my_uri, my_header, dictRequest = _process_request(req)
             if my_method == 'GET':
                 print(f"Request {i}")
@@ -108,10 +112,14 @@ def send_data(p: pipeline.Pipeline):
     
     finally:
         print("Finally")
+        t1 = time.perf_counter()
+        p.database_handler.queue.join()
+        t2 = time.perf_counter()
+        print(f"Writing time: {t2-t1:0.4f}")
         os._exit(0)
 
 
 if __name__ == '__main__':
-    p = pipeline.Pipeline("146.136.47.202", "test", True)
+    p = pipeline.Pipeline("", "train", False)
     t = threading.Thread(target=p.init_pipeline).start()
     send_data(p)
